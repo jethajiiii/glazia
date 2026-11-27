@@ -36,6 +36,22 @@ function ElementShapeComponent({ element, onSelect, onUpdate, snapToGrid = false
     onSelect(element.id);
   };
 
+  const handleDblClick = (e) => {
+    e.cancelBubble = true;
+    onSelect(element.id);
+
+    // If text element, focus the text content input in the properties panel
+    if (element.type === ELEMENT_TYPES.TEXT) {
+      setTimeout(() => {
+        const input = document.getElementById('prop-text');
+        if (input) {
+          input.focus();
+          input.select?.();
+        }
+      }, 50);
+    }
+  };
+
   const handleDragEnd = (e) => {
     let x = Math.round(e.target.x());
     let y = Math.round(e.target.y());
@@ -62,6 +78,8 @@ function ElementShapeComponent({ element, onSelect, onUpdate, snapToGrid = false
       {...konvaProps}
       onClick={handleClick}
       onTap={handleClick}
+      onDblClick={handleDblClick}
+      onDblTap={handleDblClick}
       onDragEnd={handleDragEnd}
       onTransformEnd={handleTransformEnd}
     />
