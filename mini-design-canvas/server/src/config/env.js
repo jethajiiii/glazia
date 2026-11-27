@@ -16,6 +16,9 @@ const envSchema = z.object({
     .default('mongodb://127.0.0.1:27017/mini-design-canvas'),
   CLIENT_ORIGIN: z.string().min(1, 'CLIENT_ORIGIN is required').default('http://localhost:5173'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+  BODY_LIMIT: z.string().default('10mb'),
 });
 
 const parseResult = envSchema.safeParse(process.env);
@@ -39,4 +42,7 @@ export const config = Object.freeze({
   nodeEnv: parseResult.data.NODE_ENV,
   isProduction: parseResult.data.NODE_ENV === 'production',
   isTest: parseResult.data.NODE_ENV === 'test',
+  rateLimitWindowMs: parseResult.data.RATE_LIMIT_WINDOW_MS,
+  rateLimitMax: parseResult.data.RATE_LIMIT_MAX,
+  bodyLimit: parseResult.data.BODY_LIMIT,
 });

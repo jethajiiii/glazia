@@ -53,11 +53,14 @@ export function errorHandler(err, _req, res, _next) {
     console.error('[Unhandled Exception]', err);
   }
 
+  const isProd = config.isProduction || process.env.NODE_ENV === 'production';
+  const safeMessage = statusCode >= 500 && isProd ? 'Internal Server Error' : message;
+
   const response = {
     success: false,
-    message,
+    message: safeMessage,
     ...(details !== null && { details }),
-    ...(!config.isProduction && { stack: err.stack }),
+    ...(!isProd && { stack: err.stack }),
   };
 
   return res.status(statusCode).json(response);

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import { config } from './config/env.js';
 import apiRouter from './routes/index.js';
 import { notFound } from './middleware/notFound.js';
@@ -20,12 +21,29 @@ app.use(
   }),
 );
 
-// Body parsing with safe size limits
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Rate limiting middleware on all API routes
+export const apiLimiter = rateLimit({
+  windowMs: config.rateLimitWindowMs,
+  max: config.rateLimitMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests, please try again later.',
+  },
+  skip: () => config.isTest,
+});
 
-// HTTP request logging
-app.use(morgan(config.isProduction ? 'combined' : 'dev'));
+app.use('/api', apiLimiter);
+
+// Body parsing with configurable safe size limits
+app.use(express.json({ limit: config.bodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: config.bodyLimit }));
+
+// HTTP request logging (disabled in test runs to keep output clean)
+if (!config.isTest) {
+  app.use(morgan(config.isProduction ? 'combined' : 'dev'));
+}
 
 // Mount API routes
 app.use('/api', apiRouter);

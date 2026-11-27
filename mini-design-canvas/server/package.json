@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "build": "node -c src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.js\""
   },
@@ -14,6 +16,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.5",
     "helmet": "^8.0.0",
     "mongoose": "^8.8.3",
     "morgan": "^1.10.0",
@@ -23,7 +26,10 @@
     "@eslint/js": "^9.15.0",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
+    "mongodb-memory-server": "^11.4.0",
     "nodemon": "^3.1.7",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "supertest": "^7.3.2",
+    "vitest": "^5.1.2"
   }
 }
