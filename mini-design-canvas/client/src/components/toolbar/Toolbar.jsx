@@ -1,10 +1,9 @@
 import { ELEMENT_TYPES, ELEMENT_LABELS } from '../../constants/elementTypes.js';
-import { IconButton } from '../ui/IconButton.jsx';
 import { useEditorStore } from '../../store/useEditorStore.js';
 import { selectSelectedId } from '../../store/selectors.js';
 
 /**
- * Declarative config for layer z-order actions.
+ * Declarative configuration for layer z-order actions.
  * All actions require a selected element to be active.
  */
 const LAYER_TOOL_CONFIG = [
@@ -13,6 +12,7 @@ const LAYER_TOOL_CONFIG = [
     label: 'Bring to Front',
     shortcut: 'Shift+]',
     icon: '⤒',
+    materialIcon: 'flip_to_front',
     action: 'bringToFront',
   },
   {
@@ -20,6 +20,7 @@ const LAYER_TOOL_CONFIG = [
     label: 'Bring Forward',
     shortcut: ']',
     icon: '↑',
+    materialIcon: 'arrow_upward',
     action: 'bringForward',
   },
   {
@@ -27,6 +28,7 @@ const LAYER_TOOL_CONFIG = [
     label: 'Send Backward',
     shortcut: '[',
     icon: '↓',
+    materialIcon: 'arrow_downward',
     action: 'sendBackward',
   },
   {
@@ -34,6 +36,7 @@ const LAYER_TOOL_CONFIG = [
     label: 'Send to Back',
     shortcut: 'Shift+[',
     icon: '⤓',
+    materialIcon: 'flip_to_back',
     action: 'sendToBack',
   },
 ];
@@ -46,7 +49,8 @@ const TOOL_CONFIG = [
     id: 'select',
     label: 'Select & Move',
     shortcut: 'V',
-    icon: '⬚',
+    icon: '↖',
+    materialIcon: 'near_me',
     type: null,
   },
   {
@@ -54,6 +58,7 @@ const TOOL_CONFIG = [
     label: `Add ${ELEMENT_LABELS[ELEMENT_TYPES.RECT]}`,
     shortcut: 'R',
     icon: '▭',
+    materialIcon: 'crop_square',
     type: ELEMENT_TYPES.RECT,
   },
   {
@@ -61,6 +66,7 @@ const TOOL_CONFIG = [
     label: `Add ${ELEMENT_LABELS[ELEMENT_TYPES.CIRCLE]}`,
     shortcut: 'C',
     icon: '○',
+    materialIcon: 'radio_button_unchecked',
     type: ELEMENT_TYPES.CIRCLE,
   },
   {
@@ -68,12 +74,21 @@ const TOOL_CONFIG = [
     label: `Add ${ELEMENT_LABELS[ELEMENT_TYPES.TEXT]}`,
     shortcut: 'T',
     icon: 'T',
+    materialIcon: 'title',
     type: ELEMENT_TYPES.TEXT,
+  },
+  {
+    id: 'note',
+    label: 'Add Glazia Note',
+    shortcut: 'S',
+    icon: '📝',
+    materialIcon: 'sticky_note_2',
+    type: 'note',
   },
 ];
 
 /**
- * Config-driven Toolbar component for canvas tool selection, element deletion,
+ * Floating Dock Toolbar component for canvas tool selection, element deletion,
  * and layer z-order management.
  *
  * @param {{
@@ -103,69 +118,75 @@ export function Toolbar({
 
   return (
     <aside className="toolbar-sidebar" aria-label="Canvas Drawing Tools">
-      {TOOL_CONFIG.map((tool) => (
-        <IconButton
-          key={tool.id}
-          aria-label={tool.label}
-          title={`${tool.label} (${tool.shortcut})`}
-          isActive={activeTool === tool.id}
-          onClick={() => onSelectTool(tool.id)}
-        >
-          {tool.icon}
-        </IconButton>
-      ))}
+      <nav className="toolbar-dock" aria-label="Tool Selection">
+        {TOOL_CONFIG.map((tool) => (
+          <button
+            key={tool.id}
+            type="button"
+            className={`toolbar-btn ${activeTool === tool.id ? 'toolbar-btn--active' : ''}`}
+            aria-label={tool.label}
+            title={`${tool.label} (${tool.shortcut})`}
+            onClick={() => onSelectTool(tool.id)}
+          >
+            <span className="material-symbols-outlined text-[19px]">{tool.materialIcon}</span>
+          </button>
+        ))}
 
-      <div className="toolbar-divider" />
+        <div className="toolbar-divider" />
 
-      <IconButton
-        aria-label="Delete selected element"
-        title="Delete Selected Element (Delete/Backspace)"
-        variant="ghost"
-        disabled={!selectedId}
-        onClick={() => deleteElement(selectedId)}
-      >
-        ✕
-      </IconButton>
-
-      <div className="toolbar-divider" />
-
-      {LAYER_TOOL_CONFIG.map((tool) => (
-        <IconButton
-          key={tool.id}
-          aria-label={tool.label}
-          title={`${tool.label} (${tool.shortcut})`}
-          variant="ghost"
+        <button
+          type="button"
+          className="toolbar-btn toolbar-btn--delete"
+          aria-label="Delete selected element"
+          title="Delete Selected Element (Delete/Backspace)"
           disabled={!selectedId}
-          onClick={() => layerActions[tool.action]()}
+          onClick={() => deleteElement(selectedId)}
         >
-          {tool.icon}
-        </IconButton>
-      ))}
+          <span className="material-symbols-outlined text-[19px]">delete</span>
+        </button>
 
-      {(onToggleGrid || onExportPng) && <div className="toolbar-divider" />}
+        <div className="toolbar-divider" />
 
-      {onToggleGrid && (
-        <IconButton
-          aria-label="Toggle grid and snapping"
-          title={`Toggle Grid & Snapping (${isGridEnabled ? 'On' : 'Off'})`}
-          variant="ghost"
-          isActive={isGridEnabled}
-          onClick={onToggleGrid}
-        >
-          ▦
-        </IconButton>
-      )}
+        {LAYER_TOOL_CONFIG.map((tool) => (
+          <button
+            key={tool.id}
+            type="button"
+            className="toolbar-btn"
+            aria-label={tool.label}
+            title={`${tool.label} (${tool.shortcut})`}
+            disabled={!selectedId}
+            onClick={() => layerActions[tool.action]()}
+          >
+            <span className="material-symbols-outlined text-[19px]">{tool.materialIcon}</span>
+          </button>
+        ))}
 
-      {onExportPng && (
-        <IconButton
-          aria-label="Export canvas as PNG image"
-          title="Export Canvas as PNG"
-          variant="ghost"
-          onClick={onExportPng}
-        >
-          ⇩
-        </IconButton>
-      )}
+        {(onToggleGrid || onExportPng) && <div className="toolbar-divider" />}
+
+        {onToggleGrid && (
+          <button
+            type="button"
+            className={`toolbar-btn ${isGridEnabled ? 'toolbar-btn--active' : ''}`}
+            aria-label="Toggle grid and snapping"
+            title={`Toggle Grid & Snapping (${isGridEnabled ? 'On' : 'Off'})`}
+            onClick={onToggleGrid}
+          >
+            <span className="material-symbols-outlined text-[19px]">grid_4x4</span>
+          </button>
+        )}
+
+        {onExportPng && (
+          <button
+            type="button"
+            className="toolbar-btn"
+            aria-label="Export canvas as PNG image"
+            title="Export Canvas as PNG"
+            onClick={onExportPng}
+          >
+            <span className="material-symbols-outlined text-[19px]">download</span>
+          </button>
+        )}
+      </nav>
     </aside>
   );
 }

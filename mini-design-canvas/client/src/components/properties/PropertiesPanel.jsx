@@ -1,22 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useEditorStore } from '../../store/useEditorStore.js';
-import { selectSelectedElement } from '../../store/selectors.js';
-import {
-  PROPERTY_FIELDS_CONFIG,
-  PROPERTY_SECTIONS,
-} from '../../features/properties/fieldConfig.js';
+import { selectSelectedElement, selectElements } from '../../store/selectors.js';
+import { PROPERTY_FIELDS_CONFIG } from '../../features/properties/fieldConfig.js';
 import { sanitizePropertyValue } from '../../features/properties/propertyUtils.js';
-import { TextInput, NumberInput, ColorInput, EmptyState } from '../ui/index.js';
+import { EmptyState } from '../ui/index.js';
 import { LayersPanel } from './LayersPanel.jsx';
+import { PRESET_COLORS } from '../../constants/defaults.js';
 
 /**
- * Dedicated number input field handling local typing state and committing on blur or Enter.
- * Prevents intermediate keystrokes from prematurely clamping or breaking state.
+ * Dedicated numeric input field with local state to allow typing without jitter,
+ * committing on blur or Enter.
  */
 function ConfiguredNumberField({ field, value, onCommit }) {
   const [localVal, setLocalVal] = useState(value ?? 0);
 
-  // Sync external changes (e.g. from canvas dragging or selection change)
   useEffect(() => {
     setLocalVal(value ?? 0);
   }, [value]);
@@ -37,45 +34,88 @@ function ConfiguredNumberField({ field, value, onCommit }) {
   };
 
   return (
-    <NumberInput
-      id={`prop-${field.key}`}
-      label={field.label}
-      value={localVal}
-      unit={field.unit}
-      min={field.min}
-      max={field.max}
-      step={field.step}
-      onChange={(newNum) => {
-        setLocalVal(newNum);
-      }}
-      onBlur={commitValue}
-      onKeyDown={handleKeyDown}
-    />
+    <div className="prop-number-card">
+      <span className="prop-number-label">{field.label}</span>
+      <div className="prop-number-input-row">
+        <input
+          id={`prop-${field.key}`}
+          type="number"
+          className="prop-number-input"
+          value={localVal}
+          min={field.min}
+          max={field.max}
+          step={field.step || 1}
+          onChange={(e) => {
+            const parsed = parseFloat(e.target.value);
+            setLocalVal(isNaN(parsed) ? 0 : parsed);
+          }}
+          onBlur={commitValue}
+          onKeyDown={handleKeyDown}
+          aria-label={field.label}
+        />
+        {field.unit && <span className="prop-number-unit">{field.unit}</span>}
+      </div>
+    </div>
   );
 }
 
 /**
- * Config-driven Properties Inspector Panel.
- * Dynamically renders form inputs matching the selected element's type,
- * with instantaneous two-way synchronization with the canvas.
+ * Config-driven Properties Inspector Panel with Excalidraw / Stitch Design System.
+ * Includes segmented Inspect / Layers tab switcher, coordinate cards,
+ * curated 9-swatch palette, and typography controls.
  */
 export function PropertiesPanel() {
   const selectedElement = useEditorStore(selectSelectedElement);
+  const elements = useEditorStore(selectElements);
   const updateElement = useEditorStore((state) => state.updateElement);
+
+  const [activeTab, setActiveTab] = useState('inspect'); // 'inspect' | 'layers'
+  const [renderingMode, setRenderingMode] = useState('precision'); // 'precision' | 'sketch'
+  const [strokeStyle, setStrokeStyle] = useState('solid'); // 'solid' | 'dashed' | 'dotted'
+
+  // When selection changes to an element, default to inspect tab
+  useEffect(() => {
+    if (selectedElement) {
+      setActiveTab('inspect');
+    }
+  }, [selectedElement?.id]);
 
   if (!selectedElement) {
     return (
       <aside className="properties-sidebar" aria-label="Element Properties Inspector">
         <header className="properties-header">
-          <span>Properties Inspector</span>
+          <div className="properties-header-title">
+            <span>Properties</span>
+          </div>
+          <div className="properties-tab-switch">
+            <button
+              type="button"
+              className="tab-switch-btn tab-switch-btn--active"
+              onClick={() => setActiveTab('inspect')}
+            >
+              Inspect
+            </button>
+            <button
+              type="button"
+              className="tab-switch-btn"
+              onClick={() => setActiveTab('layers')}
+            >
+              Layers ({elements.length})
+            </button>
+          </div>
         </header>
+
         <div className="properties-body">
-          <EmptyState
-            title="No Element Selected"
-            description="Click any element on the canvas to inspect and modify its dimensions, coordinates, and styling."
-          />
+          {activeTab === 'inspect' ? (
+            <EmptyState
+              title="No Element Selected"
+              description="Click any element on the canvas to inspect coordinates, dimensions, rotation, and colors."
+            />
+          ) : (
+            <LayersPanel />
+          )}
         </div>
-        <LayersPanel />
+        {activeTab === 'inspect' && <LayersPanel />}
       </aside>
     );
   }
@@ -85,88 +125,277 @@ export function PropertiesPanel() {
     field.appliesTo.includes(selectedElement.type),
   );
 
-  // Group fields by visual sections
-  const sections = Object.values(PROPERTY_SECTIONS).reduce((acc, sectionName) => {
-    const fieldsInSection = applicableFields.filter((f) => f.section === sectionName);
-    if (fieldsInSection.length > 0) {
-      acc[sectionName] = fieldsInSection;
-    }
-    return acc;
-  }, {});
-
   const handleFieldChange = (key, rawValue) => {
     const fieldDef = applicableFields.find((f) => f.key === key);
     if (!fieldDef) return;
 
     const sanitizedValue = sanitizePropertyValue(fieldDef, rawValue, selectedElement[key]);
-
     updateElement(selectedElement.id, { [key]: sanitizedValue });
   };
 
   return (
     <aside className="properties-sidebar" aria-label="Element Properties Inspector">
+      {/* ── Sticky Header: Title, Type Badge, Tab Switcher ── */}
       <header className="properties-header">
-        <span>Properties Inspector</span>
-        <span className="brand-badge">{selectedElement.type.toUpperCase()}</span>
+        <div className="properties-header-title">
+          <span className="font-semibold">Properties</span>
+          <span className="shape-type-pill">{selectedElement.type.toUpperCase()}</span>
+        </div>
+
+        <div className="properties-tab-switch">
+          <button
+            type="button"
+            className={`tab-switch-btn ${activeTab === 'inspect' ? 'tab-switch-btn--active' : ''}`}
+            onClick={() => setActiveTab('inspect')}
+          >
+            Inspect
+          </button>
+          <button
+            type="button"
+            className={`tab-switch-btn ${activeTab === 'layers' ? 'tab-switch-btn--active' : ''}`}
+            onClick={() => setActiveTab('layers')}
+          >
+            Layers ({elements.length})
+          </button>
+        </div>
       </header>
 
+      {/* ── Body: Inspect Controls or Layers List ── */}
       <div className="properties-body">
-        {Object.entries(sections).map(([sectionName, fields]) => {
-          // If a section has 2 simple numeric fields (e.g. X & Y, or Width & Height), render in a 2-col grid
-          const isTwoColNumeric = fields.length === 2 && fields.every((f) => f.input === 'number');
+        {activeTab === 'layers' ? (
+          <LayersPanel />
+        ) : (
+          <>
+            {/* 1. Coordinates & Size Section */}
+            <section className="properties-section">
+              <div className="properties-section-header">
+                <span className="properties-section-title">Coordinates & Size</span>
+                <span className="material-symbols-outlined text-[15px] text-muted">straighten</span>
+              </div>
 
-          return (
-            <section key={sectionName} className="properties-section">
-              <span className="properties-section-title">{sectionName}</span>
+              {/* Coordinates Grid */}
+              <div className="properties-grid-2">
+                <ConfiguredNumberField
+                  field={{ key: 'x', label: 'X', unit: 'px', step: 1 }}
+                  value={selectedElement.x}
+                  onCommit={handleFieldChange}
+                />
+                <ConfiguredNumberField
+                  field={{ key: 'y', label: 'Y', unit: 'px', step: 1 }}
+                  value={selectedElement.y}
+                  onCommit={handleFieldChange}
+                />
+              </div>
 
-              <div className={isTwoColNumeric ? 'properties-grid-2' : ''}>
-                {fields.map((field) => {
-                  const currentValue = selectedElement[field.key];
+              {/* Dimensions: Width & Height for rect, Radius for circle */}
+              {selectedElement.type === 'rect' && (
+                <div className="properties-grid-2">
+                  <ConfiguredNumberField
+                    field={{ key: 'width', label: 'Width', unit: 'px', min: 10, max: 5000, step: 1 }}
+                    value={selectedElement.width}
+                    onCommit={handleFieldChange}
+                  />
+                  <ConfiguredNumberField
+                    field={{ key: 'height', label: 'Height', unit: 'px', min: 10, max: 5000, step: 1 }}
+                    value={selectedElement.height}
+                    onCommit={handleFieldChange}
+                  />
+                </div>
+              )}
 
-                  if (field.input === 'number') {
-                    return (
-                      <ConfiguredNumberField
-                        key={field.key}
-                        field={field}
-                        value={currentValue}
-                        onCommit={handleFieldChange}
-                      />
-                    );
-                  }
+              {selectedElement.type === 'circle' && (
+                <ConfiguredNumberField
+                  field={{ key: 'radius', label: 'Radius', unit: 'px', min: 5, max: 2500, step: 1 }}
+                  value={selectedElement.radius}
+                  onCommit={handleFieldChange}
+                />
+              )}
 
-                  if (field.input === 'color') {
-                    return (
-                      <ColorInput
-                        key={field.key}
-                        id={`prop-${field.key}`}
-                        label={field.label}
-                        value={currentValue || '#3b82f6'}
-                        onChange={(color) => handleFieldChange(field.key, color)}
-                      />
-                    );
-                  }
+              {/* Rotation with Reset Icon */}
+              <div className="prop-number-card prop-rotation-card">
+                <span className="prop-number-label">Rotation</span>
+                <div className="prop-rotation-row">
+                  <input
+                    id="prop-rotation"
+                    type="number"
+                    className="prop-number-input prop-rotation-input"
+                    value={selectedElement.rotation || 0}
+                    onChange={(e) => handleFieldChange('rotation', parseFloat(e.target.value) || 0)}
+                    aria-label="Rotation degrees"
+                  />
+                  <span className="prop-number-unit">°</span>
+                  <button
+                    type="button"
+                    className="btn-icon-mini"
+                    onClick={() => handleFieldChange('rotation', 0)}
+                    title="Reset Rotation to 0°"
+                    aria-label="Reset Rotation"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">refresh</span>
+                  </button>
+                </div>
+              </div>
+            </section>
 
-                  if (field.input === 'text') {
-                    return (
-                      <TextInput
-                        key={field.key}
-                        id={`prop-${field.key}`}
-                        label={field.label}
-                        value={currentValue || ''}
-                        placeholder={field.placeholder}
-                        onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                      />
-                    );
-                  }
+            {/* 2. Rendering Mode & Stroke Style */}
+            <section className="properties-section">
+              <div className="properties-section-header">
+                <span className="properties-section-title">Rendering Mode</span>
+                <span className="text-tertiary-label font-mono text-[11px]">vector-konva</span>
+              </div>
 
-                  return null;
+              <div className="segmented-toggle">
+                <button
+                  type="button"
+                  className={`segmented-toggle-btn ${renderingMode === 'precision' ? 'segmented-toggle-btn--active' : ''}`}
+                  onClick={() => setRenderingMode('precision')}
+                >
+                  <span className="material-symbols-outlined text-[14px]">circle</span>
+                  <span>Precision</span>
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-toggle-btn ${renderingMode === 'sketch' ? 'segmented-toggle-btn--active' : ''}`}
+                  onClick={() => setRenderingMode('sketch')}
+                >
+                  <span className="material-symbols-outlined text-[14px]">gesture</span>
+                  <span>Sketch</span>
+                </button>
+              </div>
+
+              <div className="stroke-style-row">
+                <span className="prop-label-subtle">Stroke Style</span>
+                <div className="stroke-style-pills">
+                  <button
+                    type="button"
+                    className={`stroke-pill ${strokeStyle === 'solid' ? 'stroke-pill--active' : ''}`}
+                    onClick={() => setStrokeStyle('solid')}
+                    title="Solid line"
+                  >
+                    —
+                  </button>
+                  <button
+                    type="button"
+                    className={`stroke-pill ${strokeStyle === 'dashed' ? 'stroke-pill--active' : ''}`}
+                    onClick={() => setStrokeStyle('dashed')}
+                    title="Dashed line"
+                  >
+                    - -
+                  </button>
+                  <button
+                    type="button"
+                    className={`stroke-pill ${strokeStyle === 'dotted' ? 'stroke-pill--active' : ''}`}
+                    onClick={() => setStrokeStyle('dotted')}
+                    title="Dotted line"
+                  >
+                    ···
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* 3. Fill & Color Section with Curated 9-Swatch Palette */}
+            <section className="properties-section">
+              <div className="properties-section-header">
+                <span className="properties-section-title">Fill & Color</span>
+                <span className="font-mono text-[12px] font-semibold text-main">
+                  {(selectedElement.fill || '#3b82f6').toUpperCase()}
+                </span>
+              </div>
+
+              {/* Color preview card */}
+              <div className="color-preview-card">
+                <div
+                  className="color-pip"
+                  style={{ backgroundColor: selectedElement.fill || '#3b82f6' }}
+                >
+                  <input
+                    type="color"
+                    className="color-hidden-picker"
+                    value={selectedElement.fill || '#3b82f6'}
+                    onChange={(e) => handleFieldChange('fill', e.target.value)}
+                    aria-label="Pick color"
+                  />
+                </div>
+                <div className="color-preview-info">
+                  <input
+                    type="text"
+                    className="color-hex-text"
+                    value={(selectedElement.fill || '#3b82f6').toUpperCase()}
+                    onChange={(e) => handleFieldChange('fill', e.target.value)}
+                    maxLength={7}
+                    aria-label="Hex color code"
+                  />
+                  <span className="color-mode-subtext">100% Solid Fill</span>
+                </div>
+                <label className="btn-icon-mini" title="Pick custom color" htmlFor="hidden-color-input">
+                  <span className="material-symbols-outlined text-[16px]">colorize</span>
+                  <input
+                    id="hidden-color-input"
+                    type="color"
+                    className="color-hidden-picker"
+                    value={selectedElement.fill || '#3b82f6'}
+                    onChange={(e) => handleFieldChange('fill', e.target.value)}
+                  />
+                </label>
+              </div>
+
+              {/* Curated 9 Swatches Grid */}
+              <div className="swatches-grid-9" role="group" aria-label="Curated color swatches">
+                {PRESET_COLORS.slice(0, 9).map((color) => {
+                  const isSelected = (selectedElement.fill || '').toLowerCase() === color.toLowerCase();
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`swatch-circle ${isSelected ? 'swatch-circle--active' : ''}`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => handleFieldChange('fill', color)}
+                      title={color}
+                      aria-label={`Select color ${color}`}
+                    />
+                  );
                 })}
               </div>
             </section>
-          );
-        })}
+
+            {/* 4. Typography / Embedded Label Section */}
+            {selectedElement.type === 'text' && (
+              <section className="properties-section">
+                <div className="properties-section-header">
+                  <span className="properties-section-title">Typography & Label</span>
+                  <span className="material-symbols-outlined text-[15px] text-muted">title</span>
+                </div>
+
+                <div className="prop-text-group">
+                  <label htmlFor="prop-text" className="prop-number-label">
+                    Text Content
+                  </label>
+                  <input
+                    id="prop-text"
+                    type="text"
+                    className="prop-text-input"
+                    value={selectedElement.text || ''}
+                    placeholder="Enter text..."
+                    onChange={(e) => handleFieldChange('text', e.target.value)}
+                  />
+                </div>
+
+                <ConfiguredNumberField
+                  field={{ key: 'fontSize', label: 'Font Size', unit: 'px', min: 8, max: 200, step: 1 }}
+                  value={selectedElement.fontSize || 20}
+                  onCommit={handleFieldChange}
+                />
+              </section>
+            )}
+
+            {/* 5. Layers Tree Overview */}
+            <div className="pt-2">
+              <LayersPanel />
+            </div>
+          </>
+        )}
       </div>
-      <LayersPanel />
     </aside>
   );
 }

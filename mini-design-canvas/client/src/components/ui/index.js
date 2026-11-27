@@ -9,3 +9,4 @@ export { ColorInput } from './ColorInput.jsx';
 export { EmptyState } from './EmptyState.jsx';
 export { ToastProvider, useToast } from './Toast.jsx';
 export { ErrorBoundary } from './ErrorBoundary.jsx';
+export { GlaziaLogo } from './GlaziaLogo.jsx';

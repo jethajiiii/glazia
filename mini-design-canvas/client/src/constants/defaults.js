@@ -57,20 +57,20 @@ export const ELEMENT_BOUNDS = Object.freeze({
 });
 
 /**
- * Curated color palette presets.
+ * Curated color palette presets (Stitch Whiteboard system).
  */
 export const PRESET_COLORS = Object.freeze([
-  '#0f172a', // Slate 900
-  '#64748b', // Slate 500
-  '#ffffff', // White
-  '#ef4444', // Red
-  '#f97316', // Orange
+  '#1a1b22', // Dark Slate
+  '#004ac6', // Navy Brand Blue
+  '#e8e7f1', // Light Gray
+  '#e11d48', // Coral Red
+  '#fd761a', // Warm Orange
   '#f59e0b', // Amber
-  '#10b981', // Emerald
-  '#06b6d4', // Cyan
-  '#3b82f6', // Blue
-  '#6366f1', // Indigo
-  '#8b5cf6', // Violet
+  '#10b981', // Emerald Green
+  '#2563eb', // Electric Blue
+  '#8b5cf6', // Violet Purple
+  '#ffffff', // Pure White
+  '#64748b', // Slate 500
   '#ec4899', // Pink
 ]);
 

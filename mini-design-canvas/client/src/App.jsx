@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useZoomPan } from './hooks/useZoomPan.js';
 import {
   Button,
   IconButton,
@@ -20,15 +19,17 @@ import { CanvasListModal } from './components/canvasList/CanvasListModal.jsx';
 import { NewCanvasModal } from './components/canvasList/NewCanvasModal.jsx';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { useBeforeUnload } from './hooks/useBeforeUnload.js';
+import { useZoomPan } from './hooks/useZoomPan.js';
 import { CANVAS_DEFAULTS } from './constants/defaults.js';
 import { ELEMENT_TYPES, ELEMENT_LABELS } from './constants/elementTypes.js';
 import { useEditorStore } from './store/useEditorStore.js';
-import { selectElements, selectIsDirty, selectCanvasName } from './store/selectors.js';
+import { selectElements, selectIsDirty, selectCanvasName, selectSelectedElement } from './store/selectors.js';
 import { exportStageToPng } from './utils/exportStage.js';
 
 /**
  * Main application shell wired to the Zustand editor store,
  * React Konva canvas stage, Header with persistence controls, and Properties Panel.
+ * Features Excalidraw-style whiteboard aesthetics matching the Glazia Stitch design.
  */
 function CanvasApp() {
   const toast = useToast();
@@ -41,9 +42,13 @@ function CanvasApp() {
   const elements = useEditorStore(selectElements);
   const isDirty = useEditorStore(selectIsDirty);
   const canvasName = useEditorStore(selectCanvasName);
+  const selectedElement = useEditorStore(selectSelectedElement);
 
   // Store actions
   const addElement = useEditorStore((state) => state.addElement);
+  const deleteElement = useEditorStore((state) => state.deleteElement);
+  const bringToFront = useEditorStore((state) => state.bringToFront);
+  const sendToBack = useEditorStore((state) => state.sendToBack);
 
   // Guard against accidental page refresh/closing when dirty
   useBeforeUnload(isDirty);
@@ -86,6 +91,25 @@ function CanvasApp() {
       return;
     }
 
+    if (toolId === 'note') {
+      // Add an Excalidraw-style warm peach Sticky Note
+      addElement(ELEMENT_TYPES.RECT, {
+        width: 220,
+        height: 130,
+        fill: '#ffdbca',
+        rotation: 2,
+      });
+      addElement(ELEMENT_TYPES.TEXT, {
+        text: 'Glazia Note: Double-click to edit text.',
+        fontSize: 16,
+        fill: '#341100',
+        rotation: 2,
+      });
+      toast.success('Added Glazia Note');
+      setActiveTool('select');
+      return;
+    }
+
     if (
       toolId === ELEMENT_TYPES.RECT ||
       toolId === ELEMENT_TYPES.CIRCLE ||
@@ -123,16 +147,17 @@ function CanvasApp() {
 
   return (
     <div className="app-shell">
-      {/* 1. Header with Persistence & Auto-Save Controls */}
+      {/* 1. Header with Persistence, Brand Logo & Cloud Sync Controls */}
       <Header
         onOpenMyCanvases={() => setIsCanvasListOpen(true)}
         onOpenNewCanvas={() => setIsNewCanvasOpen(true)}
         onOpenDemo={() => setIsDemoModalOpen(true)}
+        onExportPng={handleExportPng}
       />
 
-      {/* 2. Workspace Body (Toolbar + Canvas Stage + Properties Panel) */}
+      {/* 2. Workspace Body (Floating Dock + Infinite Artboard + Properties Panel) */}
       <div className="workspace-container">
-        {/* Left Toolbar (Config-driven, Layer & Export & Grid tools) */}
+        {/* Left Floating Toolbar Dock (Stitch / Excalidraw Style) */}
         <Toolbar
           activeTool={activeTool}
           onSelectTool={handleToolClick}
@@ -141,8 +166,67 @@ function CanvasApp() {
           onExportPng={handleExportPng}
         />
 
-        {/* Central Canvas Viewport with React Konva Stage */}
+        {/* Central Canvas Viewport with Coordinate Dot Grid */}
         <main className="canvas-viewport" aria-label="Interactive Canvas Viewport">
+          {/* Top Artboard Label Badge */}
+          <div className="canvas-meta-badge" aria-label="Artboard metadata">
+            <span className="canvas-meta-badge-pill">
+              <span className="status-dot dot-green" />
+              {CANVAS_DEFAULTS.WIDTH} × {CANVAS_DEFAULTS.HEIGHT} px • {elements.length} element(s)
+              {isGridEnabled && ' • Grid (20px)'}
+            </span>
+            <span className="canvas-meta-badge-id">#board-root</span>
+          </div>
+
+          {/* Contextual Quick Action HUD Pill (Floating above selection) */}
+          {selectedElement && (
+            <div className="selection-context-hud" role="toolbar" aria-label="Quick Actions">
+              <button
+                type="button"
+                className="hud-btn"
+                title="Duplicate Element"
+                onClick={() => {
+                  if (selectedElement) {
+                    addElement(selectedElement.type, {
+                      ...selectedElement,
+                      x: selectedElement.x + 20,
+                      y: selectedElement.y + 20,
+                    });
+                    toast.success('Duplicated element');
+                  }
+                }}
+              >
+                <span className="material-symbols-outlined text-[15px]">content_copy</span>
+              </button>
+              <button
+                type="button"
+                className="hud-btn"
+                title="Bring to Front (Shift+])"
+                onClick={() => bringToFront(selectedElement.id)}
+              >
+                <span className="material-symbols-outlined text-[15px]">flip_to_front</span>
+              </button>
+              <button
+                type="button"
+                className="hud-btn"
+                title="Send to Back (Shift+[)"
+                onClick={() => sendToBack(selectedElement.id)}
+              >
+                <span className="material-symbols-outlined text-[15px]">flip_to_back</span>
+              </button>
+              <div className="hud-divider" />
+              <button
+                type="button"
+                className="hud-btn hud-btn--delete"
+                title="Delete (Backspace)"
+                onClick={() => deleteElement(selectedElement.id)}
+              >
+                <span className="material-symbols-outlined text-[15px]">delete</span>
+              </button>
+            </div>
+          )}
+
+          {/* Elevated Artboard Stage with React Konva */}
           <CanvasStage
             stageRef={stageRef}
             showGrid={isGridEnabled}
@@ -155,44 +239,83 @@ function CanvasApp() {
             onMouseUp={handleStageMouseUp}
           />
 
-          <span className="canvas-meta-badge">
-            {CANVAS_DEFAULTS.WIDTH} × {CANVAS_DEFAULTS.HEIGHT} px • {elements.length} element(s)
-            {isGridEnabled && ' • Grid (20px)'}
-          </span>
+          {/* Collaborator Cursor (Alex R.) matching Stitch design */}
+          <div
+            className="collaborator-cursor"
+            style={{ top: '160px', right: '180px' }}
+            aria-hidden="true"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M5.65 12.37H5.46L5.32 12.5L0.5 16.88V1.2L11.78 12.37H5.65Z"
+                fill="#006242"
+                stroke="#ffffff"
+                strokeWidth="1.5"
+              />
+            </svg>
+            <div className="cursor-tag">
+              <span>Alex R.</span>
+              <span className="ping-indicator" />
+            </div>
+          </div>
 
-          {/* Floating Zoom & Pan Controls */}
-          <div className="canvas-zoom-controls" role="toolbar" aria-label="Zoom and Pan Controls">
+          {/* Floating Bottom Viewport Controls Dock */}
+          <div className="canvas-bottom-dock" role="toolbar" aria-label="Viewport Controls">
             <button
               type="button"
-              className="canvas-zoom-btn"
+              className="dock-zoom-btn"
               onClick={zoomOut}
               aria-label="Zoom Out"
               title="Zoom Out (Ctrl+-)"
             >
-              −
+              <span className="material-symbols-outlined text-[16px]">remove</span>
             </button>
             <button
               type="button"
-              className="canvas-zoom-reset"
+              className="dock-zoom-readout"
               onClick={resetZoom}
-              aria-label="Reset Zoom"
+              aria-label="Reset Zoom to 100%"
               title="Reset Zoom to 100% (Ctrl+0)"
             >
               {zoomPercent}%
             </button>
             <button
               type="button"
-              className="canvas-zoom-btn"
+              className="dock-zoom-btn"
               onClick={zoomIn}
               aria-label="Zoom In"
               title="Zoom In (Ctrl+=)"
             >
-              +
+              <span className="material-symbols-outlined text-[16px]">add</span>
             </button>
+            <div className="dock-divider" />
+            <button
+              type="button"
+              className="dock-action-btn"
+              onClick={resetZoom}
+              title="Reset View to 100%"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              className={`dock-snap-btn ${isGridEnabled ? 'dock-snap-btn--active' : ''}`}
+              onClick={handleToggleGrid}
+              title="Toggle Grid & Snap"
+            >
+              <span className="material-symbols-outlined text-[14px]">grid_4x4</span>
+              <span>Snap</span>
+            </button>
+          </div>
+
+          {/* Bottom Left Status Badge */}
+          <div className="canvas-status-dock-left" aria-hidden="true">
+            <span className="material-symbols-outlined text-[14px]">brush</span>
+            <span>Canvas Active</span>
           </div>
         </main>
 
-        {/* Right Properties Panel (Config-driven, Two-way synced) */}
+        {/* Right Properties Inspector Panel (320px) */}
         <PropertiesPanel />
       </div>
 
