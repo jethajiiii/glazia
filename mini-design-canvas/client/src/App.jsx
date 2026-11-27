@@ -11,6 +11,9 @@ import {
   ToastProvider,
   useToast,
 } from './components/ui/index.js';
+import { Toolbar } from './components/toolbar/Toolbar.jsx';
+import { CanvasStage } from './components/canvas/CanvasStage.jsx';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { CANVAS_DEFAULTS } from './constants/defaults.js';
 import { ELEMENT_TYPES, ELEMENT_LABELS } from './constants/elementTypes.js';
 import { useEditorStore } from './store/useEditorStore.js';
@@ -19,30 +22,26 @@ import {
   selectElements,
   selectSelectedElement,
   selectIsDirty,
-  selectSelectedId,
 } from './store/selectors.js';
 
 /**
- * Main application shell wired to the Zustand editor store.
- * The store acts as the single source of truth for elements, selection,
- * and property inspection.
+ * Main application shell wired to the Zustand editor store and React Konva stage.
  */
 function CanvasApp() {
   const toast = useToast();
 
-  // Zustand Store Subscriptions (minimal slice selectors)
+  // Activate global keyboard shortcuts (Delete, Escape, Arrow nudging)
+  useKeyboardShortcuts();
+
+  // Zustand Store Subscriptions
   const canvasName = useEditorStore(selectCanvasName);
   const elements = useEditorStore(selectElements);
   const selectedElement = useEditorStore(selectSelectedElement);
-  const selectedId = useEditorStore(selectSelectedId);
   const isDirty = useEditorStore(selectIsDirty);
 
   // Zustand Store Actions
   const addElement = useEditorStore((state) => state.addElement);
   const updateElement = useEditorStore((state) => state.updateElement);
-  const deleteElement = useEditorStore((state) => state.deleteElement);
-  const selectElement = useEditorStore((state) => state.selectElement);
-  const clearSelection = useEditorStore((state) => state.clearSelection);
   const resetCanvas = useEditorStore((state) => state.resetCanvas);
   const setCanvasName = useEditorStore((state) => state.setCanvasName);
   const markSaved = useEditorStore((state) => state.markSaved);
@@ -58,27 +57,23 @@ function CanvasApp() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [showErrorBanner, setShowErrorBanner] = useState(true);
 
-  const handleToolClick = (toolType) => {
-    setActiveTool(toolType);
+  const handleToolClick = (toolId) => {
+    setActiveTool(toolId);
 
-    if (toolType === 'select') {
-      toast.info('Select mode active: click an element on canvas to select');
+    if (toolId === 'select') {
+      toast.info('Select mode active: click a shape on canvas to select');
       return;
     }
 
-    if (toolType === ELEMENT_TYPES.RECT || toolType === ELEMENT_TYPES.CIRCLE || toolType === ELEMENT_TYPES.TEXT) {
-      const newEl = addElement(toolType);
-      toast.success(`Added ${ELEMENT_LABELS[toolType]} (${newEl.id.slice(0, 6)}...)`);
+    if (
+      toolId === ELEMENT_TYPES.RECT ||
+      toolId === ELEMENT_TYPES.CIRCLE ||
+      toolId === ELEMENT_TYPES.TEXT
+    ) {
+      addElement(toolId);
+      toast.success(`Added ${ELEMENT_LABELS[toolId]}`);
+      setActiveTool('select');
     }
-  };
-
-  const handleDelete = () => {
-    if (!selectedId) {
-      toast.warning('No element selected to delete');
-      return;
-    }
-    deleteElement(selectedId);
-    toast.info('Deleted selected element');
   };
 
   const handleSaveSimulate = () => {
@@ -95,12 +90,12 @@ function CanvasApp() {
 
   return (
     <div className="app-shell">
-      {/* 1. Header (Top) */}
+      {/* 1. Top Header */}
       <header className="app-header">
         <div className="header-left">
           <div className="brand-title">
             <span>Mini Design Canvas</span>
-            <span className="brand-badge">Editor</span>
+            <span className="brand-badge">Konva 2D</span>
           </div>
 
           <input
@@ -114,7 +109,7 @@ function CanvasApp() {
 
           {isDirty && (
             <span
-              className="badge"
+              className="brand-badge"
               style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning-text)' }}
             >
               Unsaved Changes
@@ -153,152 +148,18 @@ function CanvasApp() {
         </div>
       </header>
 
-      {/* 2. Workspace Body (Toolbar + Canvas Area + Properties Panel) */}
+      {/* 2. Workspace Body (Toolbar + Canvas Stage + Properties Panel) */}
       <div className="workspace-container">
-        {/* Left Toolbar */}
-        <aside className="toolbar-sidebar" aria-label="Editor Tools">
-          <IconButton
-            aria-label="Select tool"
-            title="Select & Move (V)"
-            isActive={activeTool === 'select'}
-            onClick={() => handleToolClick('select')}
-          >
-            ⬚
-          </IconButton>
+        {/* Left Toolbar (Config-driven) */}
+        <Toolbar activeTool={activeTool} onSelectTool={handleToolClick} />
 
-          <div className="toolbar-divider" />
+        {/* Central Canvas Viewport with React Konva Stage */}
+        <main className="canvas-viewport" aria-label="Interactive Canvas Viewport">
+          <CanvasStage />
 
-          <IconButton
-            aria-label="Add Rectangle"
-            title="Add Rectangle (R)"
-            isActive={activeTool === ELEMENT_TYPES.RECT}
-            onClick={() => handleToolClick(ELEMENT_TYPES.RECT)}
-          >
-            ▭
-          </IconButton>
-
-          <IconButton
-            aria-label="Add Circle"
-            title="Add Circle (C)"
-            isActive={activeTool === ELEMENT_TYPES.CIRCLE}
-            onClick={() => handleToolClick(ELEMENT_TYPES.CIRCLE)}
-          >
-            ○
-          </IconButton>
-
-          <IconButton
-            aria-label="Add Text"
-            title="Add Text (T)"
-            isActive={activeTool === ELEMENT_TYPES.TEXT}
-            onClick={() => handleToolClick(ELEMENT_TYPES.TEXT)}
-          >
-            T
-          </IconButton>
-
-          <div className="toolbar-divider" />
-
-          <IconButton
-            aria-label="Delete selected element"
-            title="Delete Selected (Delete/Backspace)"
-            variant="ghost"
-            disabled={!selectedId}
-            onClick={handleDelete}
-          >
-            ✕
-          </IconButton>
-        </aside>
-
-        {/* Centre Canvas Viewport */}
-        <main
-          className="canvas-viewport"
-          aria-label="Interactive Canvas Viewport"
-          onClick={() => clearSelection()}
-        >
-          <div
-            className="canvas-paper-placeholder"
-            style={{
-              width: `${CANVAS_DEFAULTS.WIDTH}px`,
-              height: `${CANVAS_DEFAULTS.HEIGHT}px`,
-            }}
-            onClick={(e) => {
-              // Clicking paper without hitting a shape deselects
-              e.stopPropagation();
-              clearSelection();
-            }}
-          >
-            <span className="canvas-meta-badge">
-              {CANVAS_DEFAULTS.WIDTH} × {CANVAS_DEFAULTS.HEIGHT} px • {elements.length} element(s)
-            </span>
-
-            {elements.length === 0 ? (
-              <EmptyState
-                title="Canvas is Empty"
-                description="Use the toolbar on the left to add a Rectangle, Circle, or Text element."
-                action={
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addElement(ELEMENT_TYPES.RECT);
-                    }}
-                  >
-                    Add First Rectangle
-                  </Button>
-                }
-              />
-            ) : (
-              <div
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Visual mock representation of elements before Konva integration */}
-                {elements.map((el) => {
-                  const isSelected = el.id === selectedId;
-                  const borderStyle = isSelected
-                    ? '2px solid var(--color-primary)'
-                    : '1px dashed rgba(0,0,0,0.2)';
-
-                  return (
-                    <div
-                      key={el.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        selectElement(el.id);
-                      }}
-                      style={{
-                        position: 'absolute',
-                        left: `${el.x}px`,
-                        top: `${el.y}px`,
-                        width: el.width ? `${el.width}px` : el.radius ? `${el.radius * 2}px` : 'auto',
-                        height: el.height ? `${el.height}px` : el.radius ? `${el.radius * 2}px` : 'auto',
-                        backgroundColor: el.type !== ELEMENT_TYPES.TEXT ? el.fill : 'transparent',
-                        color: el.type === ELEMENT_TYPES.TEXT ? el.fill : undefined,
-                        fontSize: el.fontSize ? `${el.fontSize}px` : undefined,
-                        borderRadius: el.type === ELEMENT_TYPES.CIRCLE ? '50%' : '2px',
-                        transform: `rotate(${el.rotation || 0}deg)`,
-                        border: borderStyle,
-                        cursor: 'pointer',
-                        padding: el.type === ELEMENT_TYPES.TEXT ? '4px' : 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        userSelect: 'none',
-                        boxShadow: isSelected ? '0 0 0 3px rgba(37,99,235,0.2)' : 'none',
-                      }}
-                      title={`${ELEMENT_LABELS[el.type]} (${el.id.slice(0, 6)})`}
-                    >
-                      {el.type === ELEMENT_TYPES.TEXT && el.text}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <span className="canvas-meta-badge">
+            {CANVAS_DEFAULTS.WIDTH} × {CANVAS_DEFAULTS.HEIGHT} px • {elements.length} element(s)
+          </span>
         </main>
 
         {/* Right Properties Panel */}
