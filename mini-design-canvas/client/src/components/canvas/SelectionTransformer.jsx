@@ -7,10 +7,11 @@ import { ELEMENT_TYPES } from '../../constants/elementTypes.js';
  *
  * @param {{
  *   selectedId: string | null,
- *   selectedType?: string | null
+ *   selectedType?: string | null,
+ *   selectedElement?: object | null
  * }} props
  */
-export function SelectionTransformer({ selectedId, selectedType }) {
+export function SelectionTransformer({ selectedId, selectedType, selectedElement }) {
   const transformerRef = useRef(null);
 
   useEffect(() => {
@@ -28,12 +29,13 @@ export function SelectionTransformer({ selectedId, selectedType }) {
 
     if (selectedNode) {
       tr.nodes([selectedNode]);
+      tr.forceUpdate();
     } else {
       tr.nodes([]);
     }
 
     tr.getLayer()?.batchDraw();
-  }, [selectedId]);
+  }, [selectedId, selectedElement]);
 
   // Circles enforce keepRatio with diagonal anchors; text uses uniform scaling; rect uses all 8
   const isCircle = selectedType === ELEMENT_TYPES.CIRCLE;
@@ -58,15 +60,23 @@ export function SelectionTransformer({ selectedId, selectedType }) {
       ref={transformerRef}
       keepRatio={isCircle || isText}
       enabledAnchors={enabledAnchors}
-      anchorSize={8}
+      anchorSize={10}
       anchorCornerRadius={2}
+      hitStrokeWidth={12}
       anchorStroke="#2563eb"
       anchorFill="#ffffff"
       anchorStrokeWidth={1.5}
       borderStroke="#2563eb"
       borderStrokeWidth={1.5}
       borderDash={[4, 4]}
-      rotateAnchorOffset={24}
+      rotateAnchorOffset={26}
+      onTransformEnd={() => {
+        const tr = transformerRef.current;
+        if (tr) {
+          tr.forceUpdate();
+          tr.getLayer()?.batchDraw();
+        }
+      }}
       boundBoxFunc={(oldBox, newBox) => {
         // Enforce minimum box dimensions to prevent collapsing or inversion
         if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {

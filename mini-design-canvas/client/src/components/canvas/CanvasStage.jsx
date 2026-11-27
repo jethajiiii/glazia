@@ -25,6 +25,7 @@ import { GridLayer } from './GridLayer.jsx';
  *   onMouseDown?: (e: any) => void,
  *   onMouseMove?: (e: any) => void,
  *   onMouseUp?: (e: any) => void,
+ *   onDropTool?: (toolType: string, coords: { x: number, y: number }) => void,
  * }} props
  */
 export function CanvasStage({
@@ -37,6 +38,7 @@ export function CanvasStage({
   onMouseDown,
   onMouseMove,
   onMouseUp,
+  onDropTool,
 }) {
   const internalStageRef = useRef(null);
   const stageRef = externalStageRef || internalStageRef;
@@ -62,12 +64,40 @@ export function CanvasStage({
     [clearSelection],
   );
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const toolType = e.dataTransfer.getData('text/plain');
+    if (!toolType) return;
+
+    const stage = stageRef.current?.getStage?.() ?? stageRef.current;
+    if (!stage) return;
+
+    stage.setPointersPositions(e);
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    // Convert stage pointer to artboard canvas coordinates taking zoom and pan into account
+    const artboardX = Math.round((pointer.x - stagePos.x) / scale);
+    const artboardY = Math.round((pointer.y - stagePos.y) / scale);
+
+    if (onDropTool) {
+      onDropTool(toolType, { x: artboardX, y: artboardY });
+    }
+  };
+
   return (
     <div
       className="canvas-stage-wrapper"
       role="region"
       aria-label="Interactive Artboard Canvas"
       tabIndex={0}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <Stage
         ref={stageRef}
@@ -112,7 +142,11 @@ export function CanvasStage({
           ))}
 
           {/* Active selection transformer */}
-          <SelectionTransformer selectedId={selectedId} selectedType={selectedElement?.type} />
+          <SelectionTransformer
+            selectedId={selectedId}
+            selectedType={selectedElement?.type}
+            selectedElement={selectedElement}
+          />
         </Layer>
       </Stage>
     </div>

@@ -368,6 +368,14 @@
   outline: none;
 }
 
+.toolbar-btn[draggable="true"] {
+  cursor: grab;
+}
+
+.toolbar-btn[draggable="true"]:active {
+  cursor: grabbing;
+}
+
 .toolbar-btn:hover:not(:disabled) {
   background-color: var(--color-bg-hover);
   color: var(--color-text-main);

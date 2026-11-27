@@ -31,7 +31,7 @@ function ElementShapeComponent({ element, onSelect, onUpdate, snapToGrid = false
 
   const konvaProps = getKonvaProps(element);
 
-  const handleClick = (e) => {
+  const handleSelect = (e) => {
     e.cancelBubble = true; // Stop event bubbling to canvas background
     onSelect(element.id);
   };
@@ -50,6 +50,11 @@ function ElementShapeComponent({ element, onSelect, onUpdate, snapToGrid = false
         }
       }, 50);
     }
+  };
+
+  const handleDragStart = (e) => {
+    e.cancelBubble = true;
+    onSelect(element.id);
   };
 
   const handleDragEnd = (e) => {
@@ -76,8 +81,11 @@ function ElementShapeComponent({ element, onSelect, onUpdate, snapToGrid = false
   return (
     <KonvaComponent
       {...konvaProps}
-      onClick={handleClick}
-      onTap={handleClick}
+      onClick={handleSelect}
+      onTap={handleSelect}
+      onMouseDown={handleSelect}
+      onTouchStart={handleSelect}
+      onDragStart={handleDragStart}
       onDblClick={handleDblClick}
       onDblTap={handleDblClick}
       onDragEnd={handleDragEnd}
