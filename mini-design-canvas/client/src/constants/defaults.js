@@ -75,6 +75,18 @@ export const PRESET_COLORS = Object.freeze([
 ]);
 
 /**
+ * Grid overlay and snap-to-grid configuration.
+ */
+export const GRID_CONFIG = Object.freeze({
+  /** Grid cell size in canvas pixels. */
+  SIZE: 20,
+  /** Colour of the grid lines. */
+  STROKE: '#c8d4e8',
+  /** Opacity of grid lines (0–1). */
+  OPACITY: 0.6,
+});
+
+/**
  * Named keyboard key identifiers for hotkeys and accessibility navigation.
  */
 export const KEYBOARD_KEYS = Object.freeze({

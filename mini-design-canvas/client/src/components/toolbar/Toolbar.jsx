@@ -78,10 +78,19 @@ const TOOL_CONFIG = [
  *
  * @param {{
  *   activeTool: string,
- *   onSelectTool: (toolId: string) => void
+ *   onSelectTool: (toolId: string) => void,
+ *   isGridEnabled?: boolean,
+ *   onToggleGrid?: () => void,
+ *   onExportPng?: () => void
  * }} props
  */
-export function Toolbar({ activeTool, onSelectTool }) {
+export function Toolbar({
+  activeTool,
+  onSelectTool,
+  isGridEnabled = false,
+  onToggleGrid,
+  onExportPng,
+}) {
   const selectedId = useEditorStore(selectSelectedId);
   const deleteElement = useEditorStore((state) => state.deleteElement);
   const bringToFront = useEditorStore((state) => state.bringToFront);
@@ -132,6 +141,31 @@ export function Toolbar({ activeTool, onSelectTool }) {
           {tool.icon}
         </IconButton>
       ))}
+
+      {(onToggleGrid || onExportPng) && <div className="toolbar-divider" />}
+
+      {onToggleGrid && (
+        <IconButton
+          aria-label="Toggle grid and snapping"
+          title={`Toggle Grid & Snapping (${isGridEnabled ? 'On' : 'Off'})`}
+          variant="ghost"
+          isActive={isGridEnabled}
+          onClick={onToggleGrid}
+        >
+          ▦
+        </IconButton>
+      )}
+
+      {onExportPng && (
+        <IconButton
+          aria-label="Export canvas as PNG image"
+          title="Export Canvas as PNG"
+          variant="ghost"
+          onClick={onExportPng}
+        >
+          ⇩
+        </IconButton>
+      )}
     </aside>
   );
 }

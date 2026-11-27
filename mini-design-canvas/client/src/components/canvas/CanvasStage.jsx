@@ -1,16 +1,27 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import { CANVAS_DEFAULTS } from '../../constants/defaults.js';
 import { useEditorStore } from '../../store/useEditorStore.js';
 import { selectElements, selectSelectedId, selectSelectedElement } from '../../store/selectors.js';
 import { ElementShape } from './shapes/ElementShape.jsx';
 import { SelectionTransformer } from './SelectionTransformer.jsx';
+import { GridLayer } from './GridLayer.jsx';
 
 /**
  * Interactive React Konva Canvas Stage.
- * Renders the white drawing artboard, shapes, and selection transformer on a canvas workspace.
+ * Renders the white drawing artboard, optional grid overlay, shapes,
+ * and selection transformer on a canvas workspace.
+ *
+ * @param {{
+ *   stageRef?: import('react').RefObject<any>,
+ *   showGrid?: boolean,
+ *   snapToGrid?: boolean
+ * }} props
  */
-export function CanvasStage() {
+export function CanvasStage({ stageRef: externalStageRef, showGrid = false, snapToGrid = false }) {
+  const internalStageRef = useRef(null);
+  const stageRef = externalStageRef || internalStageRef;
+
   const elements = useEditorStore(selectElements);
   const selectedId = useEditorStore(selectSelectedId);
   const selectedElement = useEditorStore(selectSelectedElement);
@@ -40,12 +51,16 @@ export function CanvasStage() {
       tabIndex={0}
     >
       <Stage
+        ref={stageRef}
         width={CANVAS_DEFAULTS.WIDTH}
         height={CANVAS_DEFAULTS.HEIGHT}
         onClick={handleStageClick}
         onTap={handleStageClick}
         className="canvas-konva-stage"
       >
+        {/* Grid overlay layer — rendered below artboard content, non-interactive */}
+        <GridLayer visible={showGrid} />
+
         <Layer>
           {/* White artboard background */}
           <Rect
@@ -65,6 +80,7 @@ export function CanvasStage() {
               element={element}
               onSelect={selectElement}
               onUpdate={updateElement}
+              snapToGrid={snapToGrid}
             />
           ))}
 
@@ -75,3 +91,12 @@ export function CanvasStage() {
     </div>
   );
 }
+
+/**
+ * Exposes the underlying Konva Stage instance via a forwarded ref.
+ * Used by the export-to-PNG feature.
+ */
+CanvasStage.getStageRef = function () {
+  // Not needed — exportStage reaches stage through Konva's internal registry.
+  // This comment is kept as documentation: use Konva.stages[0] in exportStageToPng.
+};

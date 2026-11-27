@@ -7,11 +7,12 @@ import {
   selectCanRedo,
 } from '../../store/selectors.js';
 import { useCanvasActions } from '../../hooks/useCanvasActions.js';
+import { useAutoSave } from '../../hooks/useAutoSave.js';
 import { Button, IconButton, useToast } from '../ui/index.js';
 
 /**
  * Top application navigation header.
- * Displays editable design title, dirty state indicator, save action,
+ * Displays editable design title, auto-save status indicator, save action,
  * and entry points to Canvas browsing and creation modals.
  *
  * @param {object} props
@@ -32,6 +33,11 @@ export function Header({ onOpenMyCanvases, onOpenNewCanvas, onOpenDemo }) {
   const redo = useEditorStore((state) => state.redo);
 
   const { save, isSaving } = useCanvasActions();
+  const {
+    status: autoSaveStatus,
+    isEnabled: isAutoSaveEnabled,
+    toggle: toggleAutoSave,
+  } = useAutoSave(save);
 
   // Disabled when already saved and not dirty
   const isSaveDisabled = (!isDirty && canvasId !== null) || isSaving;
@@ -65,7 +71,27 @@ export function Header({ onOpenMyCanvases, onOpenNewCanvas, onOpenDemo }) {
           placeholder="Untitled Design"
         />
 
-        {isDirty && (
+        {(isSaving || autoSaveStatus === 'saving') && (
+          <span
+            className="brand-badge brand-badge--info"
+            role="status"
+            aria-label="Auto-saving changes"
+          >
+            Saving…
+          </span>
+        )}
+
+        {!isSaving && autoSaveStatus === 'saved' && (
+          <span
+            className="brand-badge brand-badge--success"
+            role="status"
+            aria-label="Changes saved"
+          >
+            Saved
+          </span>
+        )}
+
+        {!isSaving && autoSaveStatus !== 'saved' && isDirty && (
           <span
             className="brand-badge brand-badge--warning"
             role="status"
@@ -96,6 +122,16 @@ export function Header({ onOpenMyCanvases, onOpenNewCanvas, onOpenDemo }) {
         >
           ↪
         </IconButton>
+
+        <Button
+          variant={isAutoSaveEnabled ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={toggleAutoSave}
+          aria-label={`Toggle auto-save, currently ${isAutoSaveEnabled ? 'enabled' : 'disabled'}`}
+          title={`Auto-save is ${isAutoSaveEnabled ? 'ON' : 'OFF'}. Click to toggle.`}
+        >
+          Auto-Save: {isAutoSaveEnabled ? 'ON' : 'OFF'}
+        </Button>
 
         {onOpenDemo && (
           <Button

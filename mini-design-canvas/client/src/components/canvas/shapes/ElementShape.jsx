@@ -1,6 +1,8 @@
 import React from 'react';
 import { Rect, Circle, Text } from 'react-konva';
 import { ELEMENT_TYPES } from '../../../constants/elementTypes.js';
+import { GRID_CONFIG } from '../../../constants/defaults.js';
+import { snapToGrid as snapCoordinate } from '../../../utils/gridUtils.js';
 import { getKonvaProps, getTransformPatch } from './shapeAdapters.js';
 
 /**
@@ -16,8 +18,10 @@ const KONVA_SHAPE_COMPONENTS = {
 /**
  * Single generic shape component rendering Rect, Circle, or Text.
  * Wrapped in React.memo with stable callbacks to eliminate unnecessary re-renders.
+ *
+ * @param {{ element: object, onSelect: Function, onUpdate: Function, snapToGrid?: boolean }} props
  */
-function ElementShapeComponent({ element, onSelect, onUpdate }) {
+function ElementShapeComponent({ element, onSelect, onUpdate, snapToGrid = false }) {
   const KonvaComponent = KONVA_SHAPE_COMPONENTS[element.type];
 
   if (!KonvaComponent) {
@@ -33,8 +37,17 @@ function ElementShapeComponent({ element, onSelect, onUpdate }) {
   };
 
   const handleDragEnd = (e) => {
-    const x = Math.round(e.target.x());
-    const y = Math.round(e.target.y());
+    let x = Math.round(e.target.x());
+    let y = Math.round(e.target.y());
+
+    if (snapToGrid) {
+      x = snapCoordinate(x, GRID_CONFIG.SIZE);
+      y = snapCoordinate(y, GRID_CONFIG.SIZE);
+      // Reposition the Konva node immediately so it snaps visually before the store update
+      e.target.x(x);
+      e.target.y(y);
+    }
+
     onUpdate(element.id, { x, y });
   };
 

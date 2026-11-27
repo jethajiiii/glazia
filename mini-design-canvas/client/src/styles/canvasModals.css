@@ -2,10 +2,20 @@
    Canvas Modals Styles  –  CanvasListModal & NewCanvasModal
    ========================================================================== */
 
-/* Header warning badge */
+/* Header status badges */
 .brand-badge--warning {
   background-color: var(--color-warning-subtle) !important;
   color: var(--color-warning-text) !important;
+}
+
+.brand-badge--success {
+  background-color: var(--color-success-subtle) !important;
+  color: var(--color-success-text) !important;
+}
+
+.brand-badge--info {
+  background-color: var(--color-primary-subtle) !important;
+  color: var(--color-primary-text) !important;
 }
 
 /* Modal loading container */

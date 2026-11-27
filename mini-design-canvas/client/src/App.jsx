@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Button,
   IconButton,
@@ -22,7 +22,8 @@ import { useBeforeUnload } from './hooks/useBeforeUnload.js';
 import { CANVAS_DEFAULTS } from './constants/defaults.js';
 import { ELEMENT_TYPES, ELEMENT_LABELS } from './constants/elementTypes.js';
 import { useEditorStore } from './store/useEditorStore.js';
-import { selectElements, selectIsDirty } from './store/selectors.js';
+import { selectElements, selectIsDirty, selectCanvasName } from './store/selectors.js';
+import { exportStageToPng } from './utils/exportStage.js';
 
 /**
  * Main application shell wired to the Zustand editor store,
@@ -30,13 +31,15 @@ import { selectElements, selectIsDirty } from './store/selectors.js';
  */
 function CanvasApp() {
   const toast = useToast();
+  const stageRef = useRef(null);
 
-  // Activate global keyboard shortcuts (Delete, Escape, Arrow nudging)
+  // Activate global keyboard shortcuts (Delete, Escape, Arrow nudging, Undo/Redo)
   useKeyboardShortcuts();
 
   // Store subscriptions
   const elements = useEditorStore(selectElements);
   const isDirty = useEditorStore(selectIsDirty);
+  const canvasName = useEditorStore(selectCanvasName);
 
   // Store actions
   const addElement = useEditorStore((state) => state.addElement);
@@ -44,8 +47,11 @@ function CanvasApp() {
   // Guard against accidental page refresh/closing when dirty
   useBeforeUnload(isDirty);
 
-  // Modal display states
+  // State: tools and grid
   const [activeTool, setActiveTool] = useState('select');
+  const [isGridEnabled, setIsGridEnabled] = useState(false);
+
+  // Modal display states
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isCanvasListOpen, setIsCanvasListOpen] = useState(false);
   const [isNewCanvasOpen, setIsNewCanvasOpen] = useState(false);
@@ -76,6 +82,23 @@ function CanvasApp() {
     }
   };
 
+  const handleExportPng = () => {
+    try {
+      exportStageToPng(stageRef.current, canvasName);
+      toast.success('Canvas exported as PNG');
+    } catch (err) {
+      toast.error(err.message || 'Failed to export PNG');
+    }
+  };
+
+  const handleToggleGrid = () => {
+    setIsGridEnabled((prev) => {
+      const next = !prev;
+      toast.info(next ? 'Grid & Snap enabled' : 'Grid & Snap disabled');
+      return next;
+    });
+  };
+
   const handleTriggerToast = (type) => {
     if (type === 'success') toast.success('Operation succeeded cleanly!');
     if (type === 'error') toast.error('Something went wrong. Please check your inputs.');
@@ -85,7 +108,7 @@ function CanvasApp() {
 
   return (
     <div className="app-shell">
-      {/* 1. Header with Persistence Controls */}
+      {/* 1. Header with Persistence & Auto-Save Controls */}
       <Header
         onOpenMyCanvases={() => setIsCanvasListOpen(true)}
         onOpenNewCanvas={() => setIsNewCanvasOpen(true)}
@@ -94,15 +117,26 @@ function CanvasApp() {
 
       {/* 2. Workspace Body (Toolbar + Canvas Stage + Properties Panel) */}
       <div className="workspace-container">
-        {/* Left Toolbar (Config-driven) */}
-        <Toolbar activeTool={activeTool} onSelectTool={handleToolClick} />
+        {/* Left Toolbar (Config-driven, Layer & Export & Grid tools) */}
+        <Toolbar
+          activeTool={activeTool}
+          onSelectTool={handleToolClick}
+          isGridEnabled={isGridEnabled}
+          onToggleGrid={handleToggleGrid}
+          onExportPng={handleExportPng}
+        />
 
         {/* Central Canvas Viewport with React Konva Stage */}
         <main className="canvas-viewport" aria-label="Interactive Canvas Viewport">
-          <CanvasStage />
+          <CanvasStage
+            stageRef={stageRef}
+            showGrid={isGridEnabled}
+            snapToGrid={isGridEnabled}
+          />
 
           <span className="canvas-meta-badge">
             {CANVAS_DEFAULTS.WIDTH} × {CANVAS_DEFAULTS.HEIGHT} px • {elements.length} element(s)
+            {isGridEnabled && ' • Grid (20px)'}
           </span>
         </main>
 
