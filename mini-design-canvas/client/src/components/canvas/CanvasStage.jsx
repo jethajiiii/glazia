@@ -33,7 +33,12 @@ export function CanvasStage() {
   );
 
   return (
-    <div className="canvas-stage-wrapper">
+    <div
+      className="canvas-stage-wrapper"
+      role="region"
+      aria-label="Interactive Artboard Canvas"
+      tabIndex={0}
+    >
       <Stage
         width={CANVAS_DEFAULTS.WIDTH}
         height={CANVAS_DEFAULTS.HEIGHT}

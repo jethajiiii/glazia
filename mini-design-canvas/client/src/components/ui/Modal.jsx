@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import { KEYBOARD_KEYS } from '../../constants/defaults.js';
 
 /**
@@ -17,6 +17,7 @@ import { KEYBOARD_KEYS } from '../../constants/defaults.js';
 export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }) {
   const modalRef = useRef(null);
   const previousActiveElement = useRef(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -77,18 +78,18 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' })
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop" onClick={onClose} aria-hidden="true">
+    <div className="modal-backdrop" onClick={onClose}>
       <div
         className={`modal-container modal-${size}`}
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
         tabIndex="-1"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="modal-header">
-          <h2 id="modal-title" className="modal-title">
+          <h2 id={titleId} className="modal-title">
             {title}
           </h2>
           <button

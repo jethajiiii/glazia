@@ -8,3 +8,4 @@ export { NumberInput } from './NumberInput.jsx';
 export { ColorInput } from './ColorInput.jsx';
 export { EmptyState } from './EmptyState.jsx';
 export { ToastProvider, useToast } from './Toast.jsx';
+export { ErrorBoundary } from './ErrorBoundary.jsx';

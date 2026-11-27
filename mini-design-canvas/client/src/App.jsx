@@ -9,6 +9,7 @@ import {
   ErrorBanner,
   ToastProvider,
   useToast,
+  ErrorBoundary,
 } from './components/ui/index.js';
 import { Header } from './components/header/Header.jsx';
 import { Toolbar } from './components/toolbar/Toolbar.jsx';
@@ -227,13 +228,15 @@ function CanvasApp() {
 }
 
 /**
- * Root App wrapped with ToastProvider
+ * Root App wrapped with ErrorBoundary and ToastProvider
  */
 function App() {
   return (
-    <ToastProvider>
-      <CanvasApp />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <CanvasApp />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 

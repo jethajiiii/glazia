@@ -19,9 +19,7 @@
 }
 
 .btn:focus-visible {
-  box-shadow:
-    0 0 0 2px var(--color-bg-surface),
-    0 0 0 4px var(--color-primary);
+  box-shadow: var(--focus-ring);
 }
 
 .btn:disabled {
@@ -106,9 +104,7 @@
 }
 
 .icon-btn:focus-visible {
-  box-shadow:
-    0 0 0 2px var(--color-bg-surface),
-    0 0 0 4px var(--color-primary);
+  box-shadow: var(--focus-ring);
 }
 
 .icon-btn:disabled {
@@ -141,8 +137,10 @@
 
 .icon-btn-active {
   background-color: var(--color-primary-subtle);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   border-color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
 /* Spinner */
@@ -542,4 +540,69 @@
 }
 .toast-close-btn:hover {
   opacity: 1;
+}
+
+/* Error Boundary Fallback */
+.error-boundary-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: var(--color-bg-app);
+  padding: 1.5rem;
+}
+
+.error-boundary-card {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 2.5rem 2rem;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.error-boundary-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.error-boundary-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.error-boundary-desc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.error-boundary-details {
+  background-color: var(--color-bg-hover);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-danger-text);
+  max-width: 100%;
+  overflow-x: auto;
+  text-align: left;
+}
+
+.error-boundary-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }

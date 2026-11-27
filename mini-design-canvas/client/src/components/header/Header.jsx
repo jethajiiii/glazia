@@ -51,10 +51,11 @@ export function Header({ onOpenMyCanvases, onOpenNewCanvas, onOpenDemo }) {
 
         <input
           type="text"
+          id="canvas-name-input"
           className="canvas-title-input"
           value={canvasName}
           onChange={(e) => setCanvasName(e.target.value)}
-          aria-label="Canvas Name"
+          aria-label="Design Title"
           placeholder="Untitled Design"
         />
 
