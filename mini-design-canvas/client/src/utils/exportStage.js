@@ -64,6 +64,23 @@ export function exportStageToPng(stageOrRef, canvasName) {
   // Temporarily hide all Transformer nodes to get a clean artboard export
   const transformers = typeof stage.find === 'function' ? stage.find('Transformer') : [];
   transformers.forEach((tr) => tr.hide?.());
+
+  // Temporarily normalize stage scale and position so exported image is 1:1 artboard
+  const hasScaleX = typeof stage.scaleX === 'function';
+  const hasScaleY = typeof stage.scaleY === 'function';
+  const hasX = typeof stage.x === 'function';
+  const hasY = typeof stage.y === 'function';
+
+  const origScaleX = hasScaleX ? stage.scaleX() : 1;
+  const origScaleY = hasScaleY ? stage.scaleY() : 1;
+  const origX = hasX ? stage.x() : 0;
+  const origY = hasY ? stage.y() : 0;
+
+  if (hasScaleX) stage.scaleX(1);
+  if (hasScaleY) stage.scaleY(1);
+  if (hasX) stage.x(0);
+  if (hasY) stage.y(0);
+
   stage.batchDraw?.();
 
   try {
@@ -72,7 +89,12 @@ export function exportStageToPng(stageOrRef, canvasName) {
     triggerDownload(dataUrl, safeFilename);
     return dataUrl;
   } finally {
-    // Always restore transformers, even if toDataURL throws
+    // Always restore scale, position, and transformers, even if toDataURL throws
+    if (hasScaleX) stage.scaleX(origScaleX);
+    if (hasScaleY) stage.scaleY(origScaleY);
+    if (hasX) stage.x(origX);
+    if (hasY) stage.y(origY);
+
     transformers.forEach((tr) => tr.show?.());
     stage.batchDraw?.();
   }

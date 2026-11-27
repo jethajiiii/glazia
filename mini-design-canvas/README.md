@@ -31,6 +31,7 @@
 |---|---|
 | **Layer ordering** | Bring Forward / Send Backward / Bring to Front / Send to Back; layers panel in sidebar |
 | **Undo / Redo** | 50-entry history stack; Ctrl+Z / Ctrl+Shift+Z; groups drag + transform into one entry |
+| **Canvas zoom and pan** | Mouse wheel zoom (10%–500%), Space + drag pan, on-canvas zoom controls (− / + / reset), keyboard shortcuts (Ctrl+=, Ctrl+-, Ctrl+0) |
 | **PNG Export** | `stage.toDataURL({ pixelRatio: 2 })`; Transformer hidden during export; filename sanitised from canvas name |
 | **Auto-save** | Debounced (3 s); only when dirty and canvas is persisted; "Saving… / Saved" in header; never overlaps in-flight saves |
 | **Grid + Snap** | Toggleable 20 px grid layer; snap-to-grid on drag |
@@ -46,7 +47,7 @@
 ```
 UI Components  (React, CSS Modules)
       │
-Hooks           useCanvasActions · useAutoSave · useCanvasHistory
+Hooks           useCanvasActions · useAutoSave · useZoomPan · useCanvasHistory
       │
 Zustand Store   single source of truth — elements, selection, isDirty, history
       │

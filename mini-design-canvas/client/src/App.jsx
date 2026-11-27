@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useZoomPan } from './hooks/useZoomPan.js';
 import {
   Button,
   IconButton,
@@ -46,6 +47,20 @@ function CanvasApp() {
 
   // Guard against accidental page refresh/closing when dirty
   useBeforeUnload(isDirty);
+
+  // Zoom and pan via useZoomPan hook
+  const {
+    scale,
+    stagePos,
+    zoomPercent,
+    handleWheel,
+    handleStageMouseDown,
+    handleStageMouseMove,
+    handleStageMouseUp,
+    resetZoom,
+    zoomIn,
+    zoomOut,
+  } = useZoomPan(stageRef);
 
   // State: tools and grid
   const [activeTool, setActiveTool] = useState('select');
@@ -132,12 +147,49 @@ function CanvasApp() {
             stageRef={stageRef}
             showGrid={isGridEnabled}
             snapToGrid={isGridEnabled}
+            scale={scale}
+            stagePos={stagePos}
+            onWheel={handleWheel}
+            onMouseDown={handleStageMouseDown}
+            onMouseMove={handleStageMouseMove}
+            onMouseUp={handleStageMouseUp}
           />
 
           <span className="canvas-meta-badge">
             {CANVAS_DEFAULTS.WIDTH} × {CANVAS_DEFAULTS.HEIGHT} px • {elements.length} element(s)
             {isGridEnabled && ' • Grid (20px)'}
           </span>
+
+          {/* Floating Zoom & Pan Controls */}
+          <div className="canvas-zoom-controls" role="toolbar" aria-label="Zoom and Pan Controls">
+            <button
+              type="button"
+              className="canvas-zoom-btn"
+              onClick={zoomOut}
+              aria-label="Zoom Out"
+              title="Zoom Out (Ctrl+-)"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="canvas-zoom-reset"
+              onClick={resetZoom}
+              aria-label="Reset Zoom"
+              title="Reset Zoom to 100% (Ctrl+0)"
+            >
+              {zoomPercent}%
+            </button>
+            <button
+              type="button"
+              className="canvas-zoom-btn"
+              onClick={zoomIn}
+              aria-label="Zoom In"
+              title="Zoom In (Ctrl+=)"
+            >
+              +
+            </button>
+          </div>
         </main>
 
         {/* Right Properties Panel (Config-driven, Two-way synced) */}

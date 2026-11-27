@@ -12,13 +12,32 @@ import { GridLayer } from './GridLayer.jsx';
  * Renders the white drawing artboard, optional grid overlay, shapes,
  * and selection transformer on a canvas workspace.
  *
+ * Zoom and pan are controlled externally via scale/stagePos (from useZoomPan).
+ * Wheel and mouse drag events are forwarded to the parent's zoom/pan handlers.
+ *
  * @param {{
  *   stageRef?: import('react').RefObject<any>,
  *   showGrid?: boolean,
- *   snapToGrid?: boolean
+ *   snapToGrid?: boolean,
+ *   scale?: number,
+ *   stagePos?: { x: number, y: number },
+ *   onWheel?: (e: any) => void,
+ *   onMouseDown?: (e: any) => void,
+ *   onMouseMove?: (e: any) => void,
+ *   onMouseUp?: (e: any) => void,
  * }} props
  */
-export function CanvasStage({ stageRef: externalStageRef, showGrid = false, snapToGrid = false }) {
+export function CanvasStage({
+  stageRef: externalStageRef,
+  showGrid = false,
+  snapToGrid = false,
+  scale = 1,
+  stagePos = { x: 0, y: 0 },
+  onWheel,
+  onMouseDown,
+  onMouseMove,
+  onMouseUp,
+}) {
   const internalStageRef = useRef(null);
   const stageRef = externalStageRef || internalStageRef;
 
@@ -54,8 +73,16 @@ export function CanvasStage({ stageRef: externalStageRef, showGrid = false, snap
         ref={stageRef}
         width={CANVAS_DEFAULTS.WIDTH}
         height={CANVAS_DEFAULTS.HEIGHT}
+        scaleX={scale}
+        scaleY={scale}
+        x={stagePos.x}
+        y={stagePos.y}
         onClick={handleStageClick}
         onTap={handleStageClick}
+        onWheel={onWheel}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
         className="canvas-konva-stage"
       >
         {/* Grid overlay layer — rendered below artboard content, non-interactive */}
@@ -91,12 +118,3 @@ export function CanvasStage({ stageRef: externalStageRef, showGrid = false, snap
     </div>
   );
 }
-
-/**
- * Exposes the underlying Konva Stage instance via a forwarded ref.
- * Used by the export-to-PNG feature.
- */
-CanvasStage.getStageRef = function () {
-  // Not needed — exportStage reaches stage through Konva's internal registry.
-  // This comment is kept as documentation: use Konva.stages[0] in exportStageToPng.
-};
