@@ -18,21 +18,48 @@ function isFocusInTextInput() {
  * - Delete / Backspace: deletes the selected shape
  * - Escape: deselects current selection
  * - Arrow Keys: nudges selected element position (1px or 10px with Shift)
+ * - Ctrl/Cmd+Z: undo
+ * - Ctrl/Cmd+Shift+Z or Ctrl+Y: redo
+ * - ] / Shift+]: bring forward / to front
+ * - [ / Shift+[: send backward / to back
  */
 export function useKeyboardShortcuts() {
   const selectedElement = useEditorStore(selectSelectedElement);
   const deleteElement = useEditorStore((state) => state.deleteElement);
   const clearSelection = useEditorStore((state) => state.clearSelection);
   const updateElement = useEditorStore((state) => state.updateElement);
+  const undo = useEditorStore((state) => state.undo);
+  const redo = useEditorStore((state) => state.redo);
+  const bringForward = useEditorStore((state) => state.bringForward);
+  const sendBackward = useEditorStore((state) => state.sendBackward);
+  const bringToFront = useEditorStore((state) => state.bringToFront);
+  const sendToBack = useEditorStore((state) => state.sendToBack);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore shortcuts while user is actively typing in form inputs
+      const { key, shiftKey, ctrlKey, metaKey } = e;
+      const isModKey = ctrlKey || metaKey;
+
+      // 1. Undo / Redo (must handle before text-input guard so they always fire)
+      if (isModKey && key === KEYBOARD_KEYS.KEY_Z) {
+        e.preventDefault();
+        if (shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+        return;
+      }
+      if (isModKey && key === KEYBOARD_KEYS.KEY_Y) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Ignore remaining shortcuts while user is actively typing in form inputs
       if (isFocusInTextInput()) return;
 
-      const { key, shiftKey } = e;
-
-      // 1. Delete / Backspace
+      // 2. Delete / Backspace
       if (key === KEYBOARD_KEYS.DELETE || key === KEYBOARD_KEYS.BACKSPACE) {
         if (selectedElement) {
           e.preventDefault();
@@ -41,13 +68,37 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // 2. Escape to deselect
+      // 3. Escape to deselect
       if (key === KEYBOARD_KEYS.ESCAPE) {
         clearSelection();
         return;
       }
 
-      // 3. Arrow Keys to nudge selected element
+      // 4. Layer ordering shortcuts (require a selected element)
+      if (selectedElement) {
+        if (key === ']' && shiftKey) {
+          e.preventDefault();
+          bringToFront();
+          return;
+        }
+        if (key === ']' && !shiftKey) {
+          e.preventDefault();
+          bringForward();
+          return;
+        }
+        if (key === '[' && shiftKey) {
+          e.preventDefault();
+          sendToBack();
+          return;
+        }
+        if (key === '[' && !shiftKey) {
+          e.preventDefault();
+          sendBackward();
+          return;
+        }
+      }
+
+      // 5. Arrow Keys to nudge selected element
       if (
         selectedElement &&
         (key === KEYBOARD_KEYS.ARROW_UP ||
@@ -77,5 +128,16 @@ export function useKeyboardShortcuts() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedElement, deleteElement, clearSelection, updateElement]);
+  }, [
+    selectedElement,
+    deleteElement,
+    clearSelection,
+    updateElement,
+    undo,
+    redo,
+    bringForward,
+    sendBackward,
+    bringToFront,
+    sendToBack,
+  ]);
 }

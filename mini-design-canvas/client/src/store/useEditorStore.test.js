@@ -6,6 +6,8 @@ import {
   selectIsDirty,
   selectElements,
   selectSelectedId,
+  selectCanUndo,
+  selectCanRedo,
 } from './selectors.js';
 import { ELEMENT_TYPES } from '../constants/elementTypes.js';
 import { CANVAS_DEFAULTS } from '../constants/defaults.js';
@@ -173,6 +175,93 @@ describe('useEditorStore', () => {
 
     expect(state.isDirty).toBe(false);
     expect(state.canvasId).toBe('newly-created-mongo-id');
+  });
+
+  describe('Layer Ordering & History', () => {
+    it('bringForward moves element forward and records history', () => {
+      const { addElement, bringForward, undo } = useEditorStore.getState();
+      const el1 = addElement(ELEMENT_TYPES.RECT);
+      const el2 = addElement(ELEMENT_TYPES.CIRCLE);
+      const el3 = addElement(ELEMENT_TYPES.TEXT);
+
+      // Current order: [el1, el2, el3]
+      bringForward(el1.id);
+      expect(useEditorStore.getState().elements.map((e) => e.id)).toEqual([el2.id, el1.id, el3.id]);
+
+      // Undo reorder
+      undo();
+      expect(useEditorStore.getState().elements.map((e) => e.id)).toEqual([el1.id, el2.id, el3.id]);
+    });
+
+    it('sendBackward moves element backward and records history', () => {
+      const { addElement, sendBackward } = useEditorStore.getState();
+      const el1 = addElement(ELEMENT_TYPES.RECT);
+      const el2 = addElement(ELEMENT_TYPES.CIRCLE);
+
+      sendBackward(el2.id);
+      expect(useEditorStore.getState().elements.map((e) => e.id)).toEqual([el2.id, el1.id]);
+    });
+
+    it('bringToFront moves element directly to end', () => {
+      const { addElement, bringToFront } = useEditorStore.getState();
+      const el1 = addElement(ELEMENT_TYPES.RECT);
+      const el2 = addElement(ELEMENT_TYPES.CIRCLE);
+      const el3 = addElement(ELEMENT_TYPES.TEXT);
+
+      bringToFront(el1.id);
+      expect(useEditorStore.getState().elements.map((e) => e.id)).toEqual([el2.id, el3.id, el1.id]);
+    });
+
+    it('sendToBack moves element directly to index 0', () => {
+      const { addElement, sendToBack } = useEditorStore.getState();
+      const el1 = addElement(ELEMENT_TYPES.RECT);
+      const el2 = addElement(ELEMENT_TYPES.CIRCLE);
+      const el3 = addElement(ELEMENT_TYPES.TEXT);
+
+      sendToBack(el3.id);
+      expect(useEditorStore.getState().elements.map((e) => e.id)).toEqual([el3.id, el1.id, el2.id]);
+    });
+
+    it('undo and redo reliably reverses add, update, delete, and reorder', () => {
+      const { addElement, updateElement, deleteElement, undo, redo } = useEditorStore.getState();
+
+      const el = addElement(ELEMENT_TYPES.RECT);
+      expect(useEditorStore.getState().elements).toHaveLength(1);
+
+      updateElement(el.id, { width: 500 });
+      expect(useEditorStore.getState().elements[0].width).toBe(500);
+
+      // Undo update
+      undo();
+      expect(useEditorStore.getState().elements[0].width).not.toBe(500);
+
+      // Redo update
+      redo();
+      expect(useEditorStore.getState().elements[0].width).toBe(500);
+
+      // Delete element
+      deleteElement(el.id);
+      expect(useEditorStore.getState().elements).toHaveLength(0);
+
+      // Undo delete
+      undo();
+      expect(useEditorStore.getState().elements).toHaveLength(1);
+
+      // Redo delete
+      redo();
+      expect(useEditorStore.getState().elements).toHaveLength(0);
+    });
+
+    it('loadCanvas resets history stacks', () => {
+      const { addElement, loadCanvas } = useEditorStore.getState();
+      addElement(ELEMENT_TYPES.RECT);
+
+      expect(selectCanUndo(useEditorStore.getState())).toBe(true);
+
+      loadCanvas({ _id: '123', name: 'Loaded Canvas', elements: [] });
+      expect(selectCanUndo(useEditorStore.getState())).toBe(false);
+      expect(selectCanRedo(useEditorStore.getState())).toBe(false);
+    });
   });
 
   describe('Selectors', () => {

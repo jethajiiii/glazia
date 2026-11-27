@@ -7,6 +7,7 @@ import {
 } from '../../features/properties/fieldConfig.js';
 import { sanitizePropertyValue } from '../../features/properties/propertyUtils.js';
 import { TextInput, NumberInput, ColorInput, EmptyState } from '../ui/index.js';
+import { LayersPanel } from './LayersPanel.jsx';
 
 /**
  * Dedicated number input field handling local typing state and committing on blur or Enter.
@@ -74,6 +75,7 @@ export function PropertiesPanel() {
             description="Click any element on the canvas to inspect and modify its dimensions, coordinates, and styling."
           />
         </div>
+        <LayersPanel />
       </aside>
     );
   }
@@ -164,6 +166,7 @@ export function PropertiesPanel() {
           );
         })}
       </div>
+      <LayersPanel />
     </aside>
   );
 }

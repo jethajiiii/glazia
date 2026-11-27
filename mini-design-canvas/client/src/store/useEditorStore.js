@@ -1,22 +1,51 @@
 import { create } from 'zustand';
 import { CANVAS_DEFAULTS } from '../constants/defaults.js';
 import { createElement } from '../utils/elementFactory.js';
+import {
+  bringForward as arrayBringForward,
+  sendBackward as arraySendBackward,
+  bringToFront as arrayBringToFront,
+  sendToBack as arraySendToBack,
+  reorderById,
+} from '../utils/arrayOrder.js';
+import {
+  createHistoryState,
+  pushSnapshot,
+  undoHistory,
+  redoHistory,
+} from './history.js';
+
+/**
+ * Creates an immutable snapshot of reversible editor state.
+ *
+ * @param {object} state
+ * @returns {{ elements: Array<object>, canvasName: string, selectedId: string | null }}
+ */
+function createSnapshot(state) {
+  return {
+    elements: state.elements,
+    canvasName: state.canvasName,
+    selectedId: state.selectedId,
+  };
+}
 
 /**
  * Editor Zustand store managing canvas design state, element collection,
- * selection, and persistence dirtiness.
+ * layer z-index order, history (undo/redo), and selection.
  */
-export const useEditorStore = create((set) => ({
+export const useEditorStore = create((set, get) => ({
   // State
   canvasId: null,
   canvasName: CANVAS_DEFAULTS.NAME,
   elements: [],
   selectedId: null,
   isDirty: false,
+  history: createHistoryState(),
 
   // Actions
+
   /**
-   * Adds a new shape to the canvas, selects it, and marks canvas dirty.
+   * Adds a new shape to the canvas, selects it, records history, and marks canvas dirty.
    *
    * @param {'rect' | 'circle' | 'text'} type
    * @param {object} [overrides]
@@ -25,6 +54,7 @@ export const useEditorStore = create((set) => ({
   addElement: (type, overrides = {}) => {
     const newElement = createElement(type, overrides);
     set((state) => ({
+      history: pushSnapshot(state.history, createSnapshot(state)),
       elements: [...state.elements, newElement],
       selectedId: newElement.id,
       isDirty: true,
@@ -34,6 +64,7 @@ export const useEditorStore = create((set) => ({
 
   /**
    * Updates an existing element by ID with a partial property patch.
+   * Records history snapshot and marks canvas dirty.
    *
    * @param {string} id - Element ID
    * @param {object} patch - Property patch
@@ -50,6 +81,7 @@ export const useEditorStore = create((set) => ({
       if (!found) return state;
 
       return {
+        history: pushSnapshot(state.history, createSnapshot(state)),
         elements: nextElements,
         isDirty: true,
       };
@@ -57,7 +89,8 @@ export const useEditorStore = create((set) => ({
   },
 
   /**
-   * Deletes an element by ID (or the currently selected element if ID omitted).
+   * Deletes an element by ID (or currently selected element if omitted).
+   * Records history snapshot and marks canvas dirty.
    *
    * @param {string} [id] - Target element ID
    */
@@ -70,10 +103,133 @@ export const useEditorStore = create((set) => ({
       if (nextElements.length === state.elements.length) return state;
 
       return {
+        history: pushSnapshot(state.history, createSnapshot(state)),
         elements: nextElements,
         selectedId: state.selectedId === targetId ? null : state.selectedId,
         isDirty: true,
       };
+    });
+  },
+
+  /**
+   * Moves element one step forward in z-order (closer to front).
+   *
+   * @param {string} [id] - Element ID (defaults to selectedId)
+   */
+  bringForward: (id) => {
+    set((state) => {
+      const targetId = id || state.selectedId;
+      if (!targetId) return state;
+
+      const nextElements = reorderById(state.elements, targetId, arrayBringForward);
+      if (nextElements === state.elements) return state;
+
+      return {
+        history: pushSnapshot(state.history, createSnapshot(state)),
+        elements: nextElements,
+        isDirty: true,
+      };
+    });
+  },
+
+  /**
+   * Moves element one step backward in z-order (closer to back).
+   *
+   * @param {string} [id] - Element ID (defaults to selectedId)
+   */
+  sendBackward: (id) => {
+    set((state) => {
+      const targetId = id || state.selectedId;
+      if (!targetId) return state;
+
+      const nextElements = reorderById(state.elements, targetId, arraySendBackward);
+      if (nextElements === state.elements) return state;
+
+      return {
+        history: pushSnapshot(state.history, createSnapshot(state)),
+        elements: nextElements,
+        isDirty: true,
+      };
+    });
+  },
+
+  /**
+   * Moves element to the front of all other layers.
+   *
+   * @param {string} [id] - Element ID (defaults to selectedId)
+   */
+  bringToFront: (id) => {
+    set((state) => {
+      const targetId = id || state.selectedId;
+      if (!targetId) return state;
+
+      const nextElements = reorderById(state.elements, targetId, arrayBringToFront);
+      if (nextElements === state.elements) return state;
+
+      return {
+        history: pushSnapshot(state.history, createSnapshot(state)),
+        elements: nextElements,
+        isDirty: true,
+      };
+    });
+  },
+
+  /**
+   * Moves element to the back behind all other layers.
+   *
+   * @param {string} [id] - Element ID (defaults to selectedId)
+   */
+  sendToBack: (id) => {
+    set((state) => {
+      const targetId = id || state.selectedId;
+      if (!targetId) return state;
+
+      const nextElements = reorderById(state.elements, targetId, arraySendToBack);
+      if (nextElements === state.elements) return state;
+
+      return {
+        history: pushSnapshot(state.history, createSnapshot(state)),
+        elements: nextElements,
+        isDirty: true,
+      };
+    });
+  },
+
+  /**
+   * Reverts the most recent change.
+   */
+  undo: () => {
+    const state = get();
+    const current = createSnapshot(state);
+    const { history: nextHistory, restored } = undoHistory(state.history, current);
+
+    if (!restored) return;
+
+    set({
+      history: nextHistory,
+      elements: restored.elements,
+      canvasName: restored.canvasName ?? state.canvasName,
+      selectedId: restored.selectedId ?? null,
+      isDirty: true,
+    });
+  },
+
+  /**
+   * Re-applies the most recently undone change.
+   */
+  redo: () => {
+    const state = get();
+    const current = createSnapshot(state);
+    const { history: nextHistory, restored } = redoHistory(state.history, current);
+
+    if (!restored) return;
+
+    set({
+      history: nextHistory,
+      elements: restored.elements,
+      canvasName: restored.canvasName ?? state.canvasName,
+      selectedId: restored.selectedId ?? null,
+      isDirty: true,
     });
   },
 
@@ -101,6 +257,7 @@ export const useEditorStore = create((set) => ({
 
   /**
    * Loads an existing canvas payload from persistence into the editor.
+   * Resets history stack completely.
    *
    * @param {object} canvas - Saved canvas document
    */
@@ -111,11 +268,13 @@ export const useEditorStore = create((set) => ({
       elements: Array.isArray(canvas.elements) ? [...canvas.elements] : [],
       selectedId: null,
       isDirty: false,
+      history: createHistoryState(),
     });
   },
 
   /**
    * Resets the editor to a blank canvas state.
+   * Resets history stack completely.
    *
    * @param {string} [name=CANVAS_DEFAULTS.NAME]
    */
@@ -126,6 +285,7 @@ export const useEditorStore = create((set) => ({
       elements: [],
       selectedId: null,
       isDirty: false,
+      history: createHistoryState(),
     });
   },
 
@@ -138,6 +298,7 @@ export const useEditorStore = create((set) => ({
     set((state) => {
       if (state.canvasName === name) return state;
       return {
+        history: pushSnapshot(state.history, createSnapshot(state)),
         canvasName: name,
         isDirty: true,
       };

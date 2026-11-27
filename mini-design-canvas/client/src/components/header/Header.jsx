@@ -3,9 +3,11 @@ import {
   selectCanvasId,
   selectCanvasName,
   selectIsDirty,
+  selectCanUndo,
+  selectCanRedo,
 } from '../../store/selectors.js';
 import { useCanvasActions } from '../../hooks/useCanvasActions.js';
-import { Button, useToast } from '../ui/index.js';
+import { Button, IconButton, useToast } from '../ui/index.js';
 
 /**
  * Top application navigation header.
@@ -23,7 +25,11 @@ export function Header({ onOpenMyCanvases, onOpenNewCanvas, onOpenDemo }) {
   const canvasId = useEditorStore(selectCanvasId);
   const canvasName = useEditorStore(selectCanvasName);
   const isDirty = useEditorStore(selectIsDirty);
+  const canUndo = useEditorStore(selectCanUndo);
+  const canRedo = useEditorStore(selectCanRedo);
   const setCanvasName = useEditorStore((state) => state.setCanvasName);
+  const undo = useEditorStore((state) => state.undo);
+  const redo = useEditorStore((state) => state.redo);
 
   const { save, isSaving } = useCanvasActions();
 
@@ -71,6 +77,26 @@ export function Header({ onOpenMyCanvases, onOpenNewCanvas, onOpenDemo }) {
       </div>
 
       <div className="header-actions">
+        <IconButton
+          aria-label="Undo last action"
+          title="Undo (Ctrl+Z)"
+          variant="ghost"
+          disabled={!canUndo}
+          onClick={undo}
+        >
+          ↩
+        </IconButton>
+
+        <IconButton
+          aria-label="Redo last undone action"
+          title="Redo (Ctrl+Shift+Z)"
+          variant="ghost"
+          disabled={!canRedo}
+          onClick={redo}
+        >
+          ↪
+        </IconButton>
+
         {onOpenDemo && (
           <Button
             variant="secondary"

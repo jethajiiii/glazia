@@ -17,6 +17,12 @@ export const selectElementsCount = (state) => state.elements.length;
 
 export const selectHasSelectedElement = (state) => state.selectedId !== null;
 
+export const selectCanUndo = (state) =>
+  Array.isArray(state.history?.past) && state.history.past.length > 0;
+
+export const selectCanRedo = (state) =>
+  Array.isArray(state.history?.future) && state.history.future.length > 0;
+
 /**
  * Returns the currently selected element object, or null if none selected.
  */
