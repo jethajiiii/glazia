@@ -442,14 +442,16 @@
 .canvas-konva-stage {
   display: block;
   border-radius: 12px;
-  overflow: hidden;
+  /* overflow: hidden removed — it creates a CSS clip region that blocks pointer events
+     at border-radius corners; the visual rounding on the wrapper is enough */
 }
 
-/* Top Artboard Label Badge */
+/* Top Artboard Label Badge — decorative only, must not intercept canvas events */
 .canvas-meta-badge {
   position: absolute;
   top: -2rem;
   left: 0;
+  pointer-events: none;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -542,6 +544,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
+  /* Buttons inside need pointer-events, but the outer container does not cover the canvas */
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -636,12 +639,13 @@
   border-color: rgba(37, 99, 235, 0.2);
 }
 
-/* Bottom Left Status Badge */
+/* Bottom Left Status Badge — purely decorative, must not intercept canvas events */
 .canvas-status-dock-left {
   position: absolute;
   bottom: 1.25rem;
   left: 1.25rem;
   z-index: 30;
+  pointer-events: none;
   display: flex;
   align-items: center;
   gap: 0.35rem;

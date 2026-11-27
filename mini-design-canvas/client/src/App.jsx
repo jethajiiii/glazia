@@ -121,38 +121,6 @@ function CanvasApp() {
     }
   };
 
-  const handleDropTool = (toolType, coords) => {
-    if (toolType === 'note') {
-      addElement(ELEMENT_TYPES.RECT, {
-        x: coords.x,
-        y: coords.y,
-        width: 220,
-        height: 130,
-        fill: '#ffdbca',
-        rotation: 2,
-      });
-      addElement(ELEMENT_TYPES.TEXT, {
-        x: coords.x + 12,
-        y: coords.y + 16,
-        text: 'Glazia Note: Double-click to edit text.',
-        fontSize: 16,
-        fill: '#341100',
-        rotation: 2,
-      });
-      toast.success('Dropped Glazia Note onto canvas');
-      return;
-    }
-
-    if (
-      toolType === ELEMENT_TYPES.RECT ||
-      toolType === ELEMENT_TYPES.CIRCLE ||
-      toolType === ELEMENT_TYPES.TEXT
-    ) {
-      addElement(toolType, { x: coords.x, y: coords.y });
-      toast.success(`Dropped ${ELEMENT_LABELS[toolType]} onto canvas`);
-    }
-  };
-
   const handleExportPng = () => {
     try {
       exportStageToPng(stageRef.current, canvasName);
@@ -269,7 +237,6 @@ function CanvasApp() {
             onMouseDown={handleStageMouseDown}
             onMouseMove={handleStageMouseMove}
             onMouseUp={handleStageMouseUp}
-            onDropTool={handleDropTool}
           />
 
           {/* Collaborator Cursor (Alex R.) matching Stitch design */}

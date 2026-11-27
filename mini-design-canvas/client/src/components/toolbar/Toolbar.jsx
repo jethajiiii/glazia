@@ -125,15 +125,7 @@ export function Toolbar({
             type="button"
             className={`toolbar-btn ${activeTool === tool.id ? 'toolbar-btn--active' : ''}`}
             aria-label={tool.label}
-            title={`${tool.label} (${tool.shortcut})${tool.type ? ' — Click to add or drag onto canvas' : ''}`}
-            draggable={Boolean(tool.type)}
-            onDragStart={(e) => {
-              if (tool.type) {
-                e.dataTransfer.setData('text/plain', tool.type);
-                e.dataTransfer.setData('application/json', JSON.stringify({ type: tool.type }));
-                e.dataTransfer.effectAllowed = 'copy';
-              }
-            }}
+            title={`${tool.label} (${tool.shortcut})`}
             onClick={() => onSelectTool(tool.id)}
           >
             <span className="material-symbols-outlined text-[19px]">{tool.materialIcon}</span>

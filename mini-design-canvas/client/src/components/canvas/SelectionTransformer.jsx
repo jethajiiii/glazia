@@ -1,9 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { Transformer } from 'react-konva';
 import { ELEMENT_TYPES } from '../../constants/elementTypes.js';
 
 /**
  * Selection Transformer attaching bounding box and resize handles to the selected Konva shape.
+ *
+ * Uses useLayoutEffect (not useEffect) so the transformer node attachment happens
+ * synchronously before the browser paints — this prevents one-frame flicker where
+ * handles appear detached and prevents Konva's internal drag state from being reset
+ * mid-gesture by an async re-attachment.
  *
  * @param {{
  *   selectedId: string | null,
@@ -14,7 +19,7 @@ import { ELEMENT_TYPES } from '../../constants/elementTypes.js';
 export function SelectionTransformer({ selectedId, selectedType, selectedElement }) {
   const transformerRef = useRef(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const tr = transformerRef.current;
     if (!tr) return;
 
@@ -29,12 +34,13 @@ export function SelectionTransformer({ selectedId, selectedType, selectedElement
 
     if (selectedNode) {
       tr.nodes([selectedNode]);
-      tr.forceUpdate();
     } else {
       tr.nodes([]);
     }
 
     tr.getLayer()?.batchDraw();
+    // Re-run when the selected element's data changes so handles stay in sync
+    // after property panel edits (width, height, radius, rotation, x, y).
   }, [selectedId, selectedElement]);
 
   // Circles enforce keepRatio with diagonal anchors; text uses uniform scaling; rect uses all 8
@@ -70,13 +76,6 @@ export function SelectionTransformer({ selectedId, selectedType, selectedElement
       borderStrokeWidth={1.5}
       borderDash={[4, 4]}
       rotateAnchorOffset={26}
-      onTransformEnd={() => {
-        const tr = transformerRef.current;
-        if (tr) {
-          tr.forceUpdate();
-          tr.getLayer()?.batchDraw();
-        }
-      }}
       boundBoxFunc={(oldBox, newBox) => {
         // Enforce minimum box dimensions to prevent collapsing or inversion
         if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {
