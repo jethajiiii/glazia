@@ -6,13 +6,13 @@ import {
   TextInput,
   NumberInput,
   ColorInput,
-  EmptyState,
   ErrorBanner,
   ToastProvider,
   useToast,
 } from './components/ui/index.js';
 import { Toolbar } from './components/toolbar/Toolbar.jsx';
 import { CanvasStage } from './components/canvas/CanvasStage.jsx';
+import { PropertiesPanel } from './components/properties/PropertiesPanel.jsx';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { CANVAS_DEFAULTS } from './constants/defaults.js';
 import { ELEMENT_TYPES, ELEMENT_LABELS } from './constants/elementTypes.js';
@@ -20,12 +20,12 @@ import { useEditorStore } from './store/useEditorStore.js';
 import {
   selectCanvasName,
   selectElements,
-  selectSelectedElement,
   selectIsDirty,
 } from './store/selectors.js';
 
 /**
- * Main application shell wired to the Zustand editor store and React Konva stage.
+ * Main application shell wired to the Zustand editor store,
+ * React Konva canvas stage, config-driven Toolbar, and dynamic Properties Panel.
  */
 function CanvasApp() {
   const toast = useToast();
@@ -36,12 +36,10 @@ function CanvasApp() {
   // Zustand Store Subscriptions
   const canvasName = useEditorStore(selectCanvasName);
   const elements = useEditorStore(selectElements);
-  const selectedElement = useEditorStore(selectSelectedElement);
   const isDirty = useEditorStore(selectIsDirty);
 
   // Zustand Store Actions
   const addElement = useEditorStore((state) => state.addElement);
-  const updateElement = useEditorStore((state) => state.updateElement);
   const resetCanvas = useEditorStore((state) => state.resetCanvas);
   const setCanvasName = useEditorStore((state) => state.setCanvasName);
   const markSaved = useEditorStore((state) => state.markSaved);
@@ -162,125 +160,8 @@ function CanvasApp() {
           </span>
         </main>
 
-        {/* Right Properties Panel */}
-        <aside className="properties-sidebar" aria-label="Element Properties Inspector">
-          <header className="properties-header">
-            <span>Properties Inspector</span>
-            {selectedElement && (
-              <span className="brand-badge">{selectedElement.type.toUpperCase()}</span>
-            )}
-          </header>
-
-          <div className="properties-body">
-            {selectedElement ? (
-              <>
-                <section className="properties-section">
-                  <span className="properties-section-title">Coordinates</span>
-                  <div className="properties-grid-2">
-                    <NumberInput
-                      id="prop-x"
-                      label="X"
-                      value={selectedElement.x}
-                      unit="px"
-                      onChange={(x) => updateElement(selectedElement.id, { x })}
-                    />
-                    <NumberInput
-                      id="prop-y"
-                      label="Y"
-                      value={selectedElement.y}
-                      unit="px"
-                      onChange={(y) => updateElement(selectedElement.id, { y })}
-                    />
-                  </div>
-                </section>
-
-                <section className="properties-section">
-                  <span className="properties-section-title">Dimensions</span>
-                  {selectedElement.type === ELEMENT_TYPES.RECT && (
-                    <div className="properties-grid-2">
-                      <NumberInput
-                        id="prop-w"
-                        label="Width"
-                        value={selectedElement.width}
-                        unit="px"
-                        min={10}
-                        onChange={(width) => updateElement(selectedElement.id, { width })}
-                      />
-                      <NumberInput
-                        id="prop-h"
-                        label="Height"
-                        value={selectedElement.height}
-                        unit="px"
-                        min={10}
-                        onChange={(height) => updateElement(selectedElement.id, { height })}
-                      />
-                    </div>
-                  )}
-
-                  {selectedElement.type === ELEMENT_TYPES.CIRCLE && (
-                    <NumberInput
-                      id="prop-radius"
-                      label="Radius"
-                      value={selectedElement.radius}
-                      unit="px"
-                      min={5}
-                      onChange={(radius) => updateElement(selectedElement.id, { radius })}
-                    />
-                  )}
-
-                  {selectedElement.type === ELEMENT_TYPES.TEXT && (
-                    <>
-                      <TextInput
-                        id="prop-text"
-                        label="Text Content"
-                        value={selectedElement.text || ''}
-                        onChange={(e) =>
-                          updateElement(selectedElement.id, { text: e.target.value })
-                        }
-                      />
-                      <NumberInput
-                        id="prop-fontSize"
-                        label="Font Size"
-                        value={selectedElement.fontSize || 20}
-                        unit="px"
-                        min={8}
-                        max={160}
-                        onChange={(fontSize) => updateElement(selectedElement.id, { fontSize })}
-                      />
-                    </>
-                  )}
-                </section>
-
-                <section className="properties-section">
-                  <span className="properties-section-title">Appearance</span>
-                  <NumberInput
-                    id="prop-rot"
-                    label="Rotation"
-                    value={selectedElement.rotation || 0}
-                    unit="°"
-                    min={-360}
-                    max={360}
-                    onChange={(rotation) =>
-                      updateElement(selectedElement.id, { rotation })
-                    }
-                  />
-
-                  <ColorInput
-                    id="prop-fill"
-                    label="Fill Color"
-                    value={selectedElement.fill}
-                    onChange={(fill) => updateElement(selectedElement.id, { fill })}
-                  />
-                </section>
-              </>
-            ) : (
-              <EmptyState
-                title="No Element Selected"
-                description="Click any element on the canvas to inspect and modify its dimensions, coordinates, and styling."
-              />
-            )}
-          </div>
-        </aside>
+        {/* Right Properties Panel (Config-driven, Two-way synced) */}
+        <PropertiesPanel />
       </div>
 
       {/* 3. Reusable UI Primitives Interactive Demo Modal */}
