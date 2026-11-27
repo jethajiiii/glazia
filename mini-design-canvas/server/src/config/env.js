@@ -13,7 +13,7 @@ const envSchema = z.object({
   MONGO_URI: z
     .string()
     .min(1, 'MONGO_URI is required')
-    .default('mongodb://localhost:27017/mini-design-canvas'),
+    .default('mongodb://127.0.0.1:27017/mini-design-canvas'),
   CLIENT_ORIGIN: z.string().min(1, 'CLIENT_ORIGIN is required').default('http://localhost:5173'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });

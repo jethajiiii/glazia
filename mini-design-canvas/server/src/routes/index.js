@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import canvasRoutes from './canvasRoutes.js';
 
 const router = Router();
 
@@ -13,5 +14,10 @@ router.get('/health', (_req, res) => {
     uptime: process.uptime(),
   });
 });
+
+/**
+ * Canvas resource routes mounted under /api/canvases
+ */
+router.use('/canvases', canvasRoutes);
 
 export default router;
