@@ -1,0 +1,89 @@
+import { ELEMENT_TYPES } from './elementTypes.js';
+
+/**
+ * Default dimensions and constraints for the drawing canvas.
+ */
+export const CANVAS_DEFAULTS = Object.freeze({
+  WIDTH: 800,
+  HEIGHT: 600,
+  MIN_WIDTH: 100,
+  MAX_WIDTH: 10000,
+  MIN_HEIGHT: 100,
+  MAX_HEIGHT: 10000,
+  NAME: 'Untitled Design',
+  BACKGROUND_COLOR: '#ffffff',
+});
+
+/**
+ * Initial creation properties for each element type.
+ */
+export const ELEMENT_DEFAULTS = Object.freeze({
+  [ELEMENT_TYPES.RECT]: {
+    type: ELEMENT_TYPES.RECT,
+    width: 120,
+    height: 80,
+    fill: '#3b82f6',
+    rotation: 0,
+  },
+  [ELEMENT_TYPES.CIRCLE]: {
+    type: ELEMENT_TYPES.CIRCLE,
+    radius: 45,
+    fill: '#10b981',
+    rotation: 0,
+  },
+  [ELEMENT_TYPES.TEXT]: {
+    type: ELEMENT_TYPES.TEXT,
+    text: 'Double-click to edit',
+    fontSize: 20,
+    fill: '#0f172a',
+    rotation: 0,
+  },
+});
+
+/**
+ * Physical boundary limits for element properties.
+ */
+export const ELEMENT_BOUNDS = Object.freeze({
+  MIN_DIMENSION: 10,
+  MAX_DIMENSION: 5000,
+  MIN_RADIUS: 5,
+  MAX_RADIUS: 2500,
+  MIN_FONT_SIZE: 8,
+  MAX_FONT_SIZE: 200,
+  MIN_ROTATION: -360,
+  MAX_ROTATION: 360,
+});
+
+/**
+ * Curated color palette presets.
+ */
+export const PRESET_COLORS = Object.freeze([
+  '#0f172a', // Slate 900
+  '#64748b', // Slate 500
+  '#ffffff', // White
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#f59e0b', // Amber
+  '#10b981', // Emerald
+  '#06b6d4', // Cyan
+  '#3b82f6', // Blue
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+]);
+
+/**
+ * Named keyboard key identifiers for hotkeys and accessibility navigation.
+ */
+export const KEYBOARD_KEYS = Object.freeze({
+  DELETE: 'Delete',
+  BACKSPACE: 'Backspace',
+  ESCAPE: 'Escape',
+  ENTER: 'Enter',
+  ARROW_UP: 'ArrowUp',
+  ARROW_DOWN: 'ArrowDown',
+  ARROW_LEFT: 'ArrowLeft',
+  ARROW_RIGHT: 'ArrowRight',
+  KEY_Z: 'z',
+  KEY_Y: 'y',
+});

@@ -33,6 +33,9 @@ export default [
         localStorage: 'readonly',
         HTMLCanvasElement: 'readonly',
         HTMLElement: 'readonly',
+        FormData: 'readonly',
+        RequestInit: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     settings: {
@@ -43,6 +46,7 @@ export default [
     rules: {
       ...reactPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+      'react/prop-types': 'off', // Standard in modern React without PropTypes library
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
     },
