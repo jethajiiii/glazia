@@ -10,25 +10,22 @@ import {
   ToastProvider,
   useToast,
 } from './components/ui/index.js';
+import { Header } from './components/header/Header.jsx';
 import { Toolbar } from './components/toolbar/Toolbar.jsx';
 import { CanvasStage } from './components/canvas/CanvasStage.jsx';
 import { PropertiesPanel } from './components/properties/PropertiesPanel.jsx';
-import { CanvasManagerModal } from './features/canvas/CanvasManagerModal.jsx';
-import { useCanvasPersistence } from './features/canvas/useCanvasPersistence.js';
+import { CanvasListModal } from './components/canvasList/CanvasListModal.jsx';
+import { NewCanvasModal } from './components/canvasList/NewCanvasModal.jsx';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
-import { useAsync } from './hooks/useAsync.js';
+import { useBeforeUnload } from './hooks/useBeforeUnload.js';
 import { CANVAS_DEFAULTS } from './constants/defaults.js';
 import { ELEMENT_TYPES, ELEMENT_LABELS } from './constants/elementTypes.js';
 import { useEditorStore } from './store/useEditorStore.js';
-import {
-  selectCanvasName,
-  selectElements,
-  selectIsDirty,
-} from './store/selectors.js';
+import { selectElements, selectIsDirty } from './store/selectors.js';
 
 /**
  * Main application shell wired to the Zustand editor store,
- * React Konva canvas stage, config-driven Toolbar, and dynamic Properties Panel.
+ * React Konva canvas stage, Header with persistence controls, and Properties Panel.
  */
 function CanvasApp() {
   const toast = useToast();
@@ -36,24 +33,21 @@ function CanvasApp() {
   // Activate global keyboard shortcuts (Delete, Escape, Arrow nudging)
   useKeyboardShortcuts();
 
-  // Zustand Store Subscriptions
-  const canvasName = useEditorStore(selectCanvasName);
+  // Store subscriptions
   const elements = useEditorStore(selectElements);
   const isDirty = useEditorStore(selectIsDirty);
 
-  // Zustand Store Actions
+  // Store actions
   const addElement = useEditorStore((state) => state.addElement);
-  const resetCanvas = useEditorStore((state) => state.resetCanvas);
-  const setCanvasName = useEditorStore((state) => state.setCanvasName);
 
-  // Persistence hooks
-  const { save } = useCanvasPersistence();
-  const { run: runSave, isLoading: isSaving } = useAsync();
+  // Guard against accidental page refresh/closing when dirty
+  useBeforeUnload(isDirty);
 
-  // Local UI-only state
+  // Modal display states
   const [activeTool, setActiveTool] = useState('select');
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [isManagerOpen, setIsManagerOpen] = useState(false);
+  const [isCanvasListOpen, setIsCanvasListOpen] = useState(false);
+  const [isNewCanvasOpen, setIsNewCanvasOpen] = useState(false);
 
   // Demo modal inputs
   const [demoText, setDemoText] = useState('Sample text');
@@ -81,23 +75,6 @@ function CanvasApp() {
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const saved = await runSave((signal) => save(signal));
-      toast.success(`Design "${saved?.name || canvasName}" saved successfully!`);
-    } catch (err) {
-      toast.error(err.message || 'Failed to save canvas');
-    }
-  };
-
-  const handleNewCanvas = () => {
-    if (isDirty && !window.confirm('You have unsaved changes. Start a new canvas anyway?')) {
-      return;
-    }
-    resetCanvas();
-    toast.info('New blank canvas initialized');
-  };
-
   const handleTriggerToast = (type) => {
     if (type === 'success') toast.success('Operation succeeded cleanly!');
     if (type === 'error') toast.error('Something went wrong. Please check your inputs.');
@@ -107,69 +84,12 @@ function CanvasApp() {
 
   return (
     <div className="app-shell">
-      {/* 1. Top Header */}
-      <header className="app-header">
-        <div className="header-left">
-          <div className="brand-title">
-            <span>Mini Design Canvas</span>
-            <span className="brand-badge">Konva 2D</span>
-          </div>
-
-          <input
-            type="text"
-            className="canvas-title-input"
-            value={canvasName}
-            onChange={(e) => setCanvasName(e.target.value)}
-            aria-label="Canvas Name"
-            placeholder="Untitled Design"
-          />
-
-          {isDirty && (
-            <span
-              className="brand-badge"
-              style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning-text)' }}
-            >
-              Unsaved Changes
-            </span>
-          )}
-        </div>
-
-        <div className="header-actions">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsDemoModalOpen(true)}
-            aria-label="View UI Primitives Showcase"
-          >
-            UI Primitives Demo
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsManagerOpen(true)}
-          >
-            Browse Canvases
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleNewCanvas}
-          >
-            New Canvas
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            isLoading={isSaving}
-            onClick={handleSave}
-          >
-            {isSaving ? 'Saving...' : 'Save Design'}
-          </Button>
-        </div>
-      </header>
+      {/* 1. Header with Persistence Controls */}
+      <Header
+        onOpenMyCanvases={() => setIsCanvasListOpen(true)}
+        onOpenNewCanvas={() => setIsNewCanvasOpen(true)}
+        onOpenDemo={() => setIsDemoModalOpen(true)}
+      />
 
       {/* 2. Workspace Body (Toolbar + Canvas Stage + Properties Panel) */}
       <div className="workspace-container">
@@ -189,15 +109,19 @@ function CanvasApp() {
         <PropertiesPanel />
       </div>
 
-      {/* 3. Saved Canvases Manager Modal */}
-      <CanvasManagerModal
-        isOpen={isManagerOpen}
-        onClose={() => setIsManagerOpen(false)}
-        onLoaded={() => toast.success('Canvas loaded')}
-        onDeleted={() => toast.info('Canvas deleted')}
+      {/* 3. My Canvases Modal */}
+      <CanvasListModal
+        isOpen={isCanvasListOpen}
+        onClose={() => setIsCanvasListOpen(false)}
       />
 
-      {/* 4. Reusable UI Primitives Interactive Demo Modal */}
+      {/* 4. New Canvas Modal */}
+      <NewCanvasModal
+        isOpen={isNewCanvasOpen}
+        onClose={() => setIsNewCanvasOpen(false)}
+      />
+
+      {/* 5. Reusable UI Primitives Interactive Demo Modal */}
       <Modal
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}

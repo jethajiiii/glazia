@@ -11,6 +11,8 @@ export const CANVAS_DEFAULTS = Object.freeze({
   MIN_HEIGHT: 100,
   MAX_HEIGHT: 10000,
   NAME: 'Untitled Design',
+  NAME_MIN_LENGTH: 1,
+  NAME_MAX_LENGTH: 100,
   BACKGROUND_COLOR: '#ffffff',
 });
 
