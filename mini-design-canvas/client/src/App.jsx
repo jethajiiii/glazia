@@ -23,7 +23,7 @@ import { useZoomPan } from './hooks/useZoomPan.js';
 import { CANVAS_DEFAULTS } from './constants/defaults.js';
 import { ELEMENT_TYPES, ELEMENT_LABELS } from './constants/elementTypes.js';
 import { useEditorStore } from './store/useEditorStore.js';
-import { selectElements, selectIsDirty, selectCanvasName, selectSelectedElement } from './store/selectors.js';
+import { selectElements, selectIsDirty, selectCanvasName } from './store/selectors.js';
 import { exportStageToPng } from './utils/exportStage.js';
 
 /**
@@ -42,13 +42,9 @@ function CanvasApp() {
   const elements = useEditorStore(selectElements);
   const isDirty = useEditorStore(selectIsDirty);
   const canvasName = useEditorStore(selectCanvasName);
-  const selectedElement = useEditorStore(selectSelectedElement);
 
   // Store actions
   const addElement = useEditorStore((state) => state.addElement);
-  const deleteElement = useEditorStore((state) => state.deleteElement);
-  const bringToFront = useEditorStore((state) => state.bringToFront);
-  const sendToBack = useEditorStore((state) => state.sendToBack);
 
   // Guard against accidental page refresh/closing when dirty
   useBeforeUnload(isDirty);
@@ -178,54 +174,6 @@ function CanvasApp() {
             <span className="canvas-meta-badge-id">#board-root</span>
           </div>
 
-          {/* Contextual Quick Action HUD Pill (Floating above selection) */}
-          {selectedElement && (
-            <div className="selection-context-hud" role="toolbar" aria-label="Quick Actions">
-              <button
-                type="button"
-                className="hud-btn"
-                title="Duplicate Element"
-                onClick={() => {
-                  if (selectedElement) {
-                    addElement(selectedElement.type, {
-                      ...selectedElement,
-                      x: selectedElement.x + 20,
-                      y: selectedElement.y + 20,
-                    });
-                    toast.success('Duplicated element');
-                  }
-                }}
-              >
-                <span className="material-symbols-outlined text-[15px]">content_copy</span>
-              </button>
-              <button
-                type="button"
-                className="hud-btn"
-                title="Bring to Front (Shift+])"
-                onClick={() => bringToFront(selectedElement.id)}
-              >
-                <span className="material-symbols-outlined text-[15px]">flip_to_front</span>
-              </button>
-              <button
-                type="button"
-                className="hud-btn"
-                title="Send to Back (Shift+[)"
-                onClick={() => sendToBack(selectedElement.id)}
-              >
-                <span className="material-symbols-outlined text-[15px]">flip_to_back</span>
-              </button>
-              <div className="hud-divider" />
-              <button
-                type="button"
-                className="hud-btn hud-btn--delete"
-                title="Delete (Backspace)"
-                onClick={() => deleteElement(selectedElement.id)}
-              >
-                <span className="material-symbols-outlined text-[15px]">delete</span>
-              </button>
-            </div>
-          )}
-
           {/* Elevated Artboard Stage with React Konva */}
           <CanvasStage
             stageRef={stageRef}
@@ -238,26 +186,6 @@ function CanvasApp() {
             onMouseMove={handleStageMouseMove}
             onMouseUp={handleStageMouseUp}
           />
-
-          {/* Collaborator Cursor (Alex R.) matching Stitch design */}
-          <div
-            className="collaborator-cursor"
-            style={{ top: '160px', right: '180px' }}
-            aria-hidden="true"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5.65 12.37H5.46L5.32 12.5L0.5 16.88V1.2L11.78 12.37H5.65Z"
-                fill="#006242"
-                stroke="#ffffff"
-                strokeWidth="1.5"
-              />
-            </svg>
-            <div className="cursor-tag">
-              <span>Alex R.</span>
-              <span className="ping-indicator" />
-            </div>
-          </div>
 
           {/* Floating Bottom Viewport Controls Dock */}
           <div className="canvas-bottom-dock" role="toolbar" aria-label="Viewport Controls">

@@ -70,8 +70,6 @@ export function PropertiesPanel() {
   const updateElement = useEditorStore((state) => state.updateElement);
 
   const [activeTab, setActiveTab] = useState('inspect'); // 'inspect' | 'layers'
-  const [renderingMode, setRenderingMode] = useState('precision'); // 'precision' | 'sketch'
-  const [strokeStyle, setStrokeStyle] = useState('solid'); // 'solid' | 'dashed' | 'dotted'
 
   // When selection changes to an element, default to inspect tab
   useEffect(() => {
@@ -237,64 +235,7 @@ export function PropertiesPanel() {
               </div>
             </section>
 
-            {/* 2. Rendering Mode & Stroke Style */}
-            <section className="properties-section">
-              <div className="properties-section-header">
-                <span className="properties-section-title">Rendering Mode</span>
-                <span className="text-tertiary-label font-mono text-[11px]">vector-konva</span>
-              </div>
-
-              <div className="segmented-toggle">
-                <button
-                  type="button"
-                  className={`segmented-toggle-btn ${renderingMode === 'precision' ? 'segmented-toggle-btn--active' : ''}`}
-                  onClick={() => setRenderingMode('precision')}
-                >
-                  <span className="material-symbols-outlined text-[14px]">circle</span>
-                  <span>Precision</span>
-                </button>
-                <button
-                  type="button"
-                  className={`segmented-toggle-btn ${renderingMode === 'sketch' ? 'segmented-toggle-btn--active' : ''}`}
-                  onClick={() => setRenderingMode('sketch')}
-                >
-                  <span className="material-symbols-outlined text-[14px]">gesture</span>
-                  <span>Sketch</span>
-                </button>
-              </div>
-
-              <div className="stroke-style-row">
-                <span className="prop-label-subtle">Stroke Style</span>
-                <div className="stroke-style-pills">
-                  <button
-                    type="button"
-                    className={`stroke-pill ${strokeStyle === 'solid' ? 'stroke-pill--active' : ''}`}
-                    onClick={() => setStrokeStyle('solid')}
-                    title="Solid line"
-                  >
-                    —
-                  </button>
-                  <button
-                    type="button"
-                    className={`stroke-pill ${strokeStyle === 'dashed' ? 'stroke-pill--active' : ''}`}
-                    onClick={() => setStrokeStyle('dashed')}
-                    title="Dashed line"
-                  >
-                    - -
-                  </button>
-                  <button
-                    type="button"
-                    className={`stroke-pill ${strokeStyle === 'dotted' ? 'stroke-pill--active' : ''}`}
-                    onClick={() => setStrokeStyle('dotted')}
-                    title="Dotted line"
-                  >
-                    ···
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            {/* 3. Fill & Color Section with Curated 9-Swatch Palette */}
+            {/* 2. Fill & Color Section with Curated 9-Swatch Palette */}
             <section className="properties-section">
               <div className="properties-section-header">
                 <span className="properties-section-title">Fill & Color</span>
@@ -308,15 +249,8 @@ export function PropertiesPanel() {
                 <div
                   className="color-pip"
                   style={{ backgroundColor: selectedElement.fill || '#3b82f6' }}
-                >
-                  <input
-                    type="color"
-                    className="color-hidden-picker"
-                    value={selectedElement.fill || '#3b82f6'}
-                    onChange={(e) => handleFieldChange('fill', e.target.value)}
-                    aria-label="Pick color"
-                  />
-                </div>
+                  aria-label="Current color swatch"
+                />
                 <div className="color-preview-info">
                   <input
                     type="text"
@@ -326,18 +260,8 @@ export function PropertiesPanel() {
                     maxLength={7}
                     aria-label="Hex color code"
                   />
-                  <span className="color-mode-subtext">100% Solid Fill</span>
+                  <span className="color-mode-subtext">Solid Color</span>
                 </div>
-                <label className="btn-icon-mini" title="Pick custom color" htmlFor="hidden-color-input">
-                  <span className="material-symbols-outlined text-[16px]">colorize</span>
-                  <input
-                    id="hidden-color-input"
-                    type="color"
-                    className="color-hidden-picker"
-                    value={selectedElement.fill || '#3b82f6'}
-                    onChange={(e) => handleFieldChange('fill', e.target.value)}
-                  />
-                </label>
               </div>
 
               {/* Curated 9 Swatches Grid */}

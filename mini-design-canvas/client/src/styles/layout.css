@@ -480,60 +480,7 @@
   font-weight: 400;
 }
 
-/* Contextual Quick Action HUD Pill (Floating above selection) */
-.selection-context-hud {
-  position: absolute;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 35;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: #1a1b22;
-  color: #f1effa;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-hud);
-  animation: fadeInDown 150ms ease;
-  user-select: none;
-}
 
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translate(-50%, -6px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-
-.hud-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-full);
-  border: none;
-  background: transparent;
-  color: #f1effa;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.hud-btn:hover {
-  background-color: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-}
-
-.hud-btn--delete:hover {
-  background-color: rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
-}
-
-.hud-divider {
-  width: 1px;
-  height: 14px;
-  background-color: rgba(255, 255, 255, 0.2);
-  margin: 0 2px;
-}
 
 /* ==========================================================================
    Bottom Canvas Viewport Controls Dock (Floating HUD)
@@ -661,37 +608,7 @@
   user-select: none;
 }
 
-/* Collaborator Alex R. Cursor Badge */
-.collaborator-cursor {
-  position: absolute;
-  pointer-events: none;
-  z-index: 25;
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  transition: all 300ms ease;
-}
 
-.cursor-tag {
-  background-color: #006242;
-  color: #ffffff;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-full);
-  font-size: 0.68rem;
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.ping-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #6ffbbe;
-}
 
 /* ==========================================================================
    Right Properties Inspector Panel (320px Floating Sidebar)
@@ -896,85 +813,7 @@
   color: var(--color-text-main);
 }
 
-/* Precision vs Sketch Segmented Toggle */
-.segmented-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background-color: var(--color-bg-hover);
-  padding: 2px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-subtle);
-}
 
-.segmented-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.segmented-toggle-btn:hover {
-  color: var(--color-text-main);
-}
-
-.segmented-toggle-btn--active {
-  background-color: var(--color-bg-surface);
-  color: var(--color-text-main);
-  font-weight: 600;
-  box-shadow: var(--shadow-xs);
-}
-
-/* Stroke Style Pills */
-.stroke-style-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 0.25rem;
-}
-
-.prop-label-subtle {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-.stroke-style-pills {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background-color: var(--color-bg-hover);
-  padding: 2px;
-  border-radius: var(--radius-full);
-}
-
-.stroke-pill {
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-full);
-  font-size: 0.72rem;
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.stroke-pill:hover {
-  color: var(--color-text-main);
-}
-
-.stroke-pill--active {
-  background-color: var(--color-bg-surface);
-  color: var(--color-text-main);
-  box-shadow: var(--shadow-xs);
-}
 
 /* Color Preview & 9-Swatch Palette */
 .color-preview-card {
@@ -996,16 +835,6 @@
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  cursor: pointer;
-}
-
-.color-hidden-picker {
-  opacity: 0;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
 }
 
 .color-preview-info {
