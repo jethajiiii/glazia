@@ -13,7 +13,10 @@ import {
 import { Toolbar } from './components/toolbar/Toolbar.jsx';
 import { CanvasStage } from './components/canvas/CanvasStage.jsx';
 import { PropertiesPanel } from './components/properties/PropertiesPanel.jsx';
+import { CanvasManagerModal } from './features/canvas/CanvasManagerModal.jsx';
+import { useCanvasPersistence } from './features/canvas/useCanvasPersistence.js';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
+import { useAsync } from './hooks/useAsync.js';
 import { CANVAS_DEFAULTS } from './constants/defaults.js';
 import { ELEMENT_TYPES, ELEMENT_LABELS } from './constants/elementTypes.js';
 import { useEditorStore } from './store/useEditorStore.js';
@@ -42,11 +45,15 @@ function CanvasApp() {
   const addElement = useEditorStore((state) => state.addElement);
   const resetCanvas = useEditorStore((state) => state.resetCanvas);
   const setCanvasName = useEditorStore((state) => state.setCanvasName);
-  const markSaved = useEditorStore((state) => state.markSaved);
+
+  // Persistence hooks
+  const { save } = useCanvasPersistence();
+  const { run: runSave, isLoading: isSaving } = useAsync();
 
   // Local UI-only state
   const [activeTool, setActiveTool] = useState('select');
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isManagerOpen, setIsManagerOpen] = useState(false);
 
   // Demo modal inputs
   const [demoText, setDemoText] = useState('Sample text');
@@ -74,9 +81,21 @@ function CanvasApp() {
     }
   };
 
-  const handleSaveSimulate = () => {
-    markSaved();
-    toast.success(`Design "${canvasName}" saved (marked clean)`);
+  const handleSave = async () => {
+    try {
+      const saved = await runSave((signal) => save(signal));
+      toast.success(`Design "${saved?.name || canvasName}" saved successfully!`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to save canvas');
+    }
+  };
+
+  const handleNewCanvas = () => {
+    if (isDirty && !window.confirm('You have unsaved changes. Start a new canvas anyway?')) {
+      return;
+    }
+    resetCanvas();
+    toast.info('New blank canvas initialized');
   };
 
   const handleTriggerToast = (type) => {
@@ -128,10 +147,15 @@ function CanvasApp() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => {
-              resetCanvas();
-              toast.info('New canvas initialized');
-            }}
+            onClick={() => setIsManagerOpen(true)}
+          >
+            Browse Canvases
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleNewCanvas}
           >
             New Canvas
           </Button>
@@ -139,9 +163,10 @@ function CanvasApp() {
           <Button
             variant="primary"
             size="sm"
-            onClick={handleSaveSimulate}
+            isLoading={isSaving}
+            onClick={handleSave}
           >
-            Save Design
+            {isSaving ? 'Saving...' : 'Save Design'}
           </Button>
         </div>
       </header>
@@ -164,7 +189,15 @@ function CanvasApp() {
         <PropertiesPanel />
       </div>
 
-      {/* 3. Reusable UI Primitives Interactive Demo Modal */}
+      {/* 3. Saved Canvases Manager Modal */}
+      <CanvasManagerModal
+        isOpen={isManagerOpen}
+        onClose={() => setIsManagerOpen(false)}
+        onLoaded={() => toast.success('Canvas loaded')}
+        onDeleted={() => toast.info('Canvas deleted')}
+      />
+
+      {/* 4. Reusable UI Primitives Interactive Demo Modal */}
       <Modal
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}

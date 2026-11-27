@@ -36,6 +36,7 @@ export default [
         FormData: 'readonly',
         RequestInit: 'readonly',
         AbortSignal: 'readonly',
+        AbortController: 'readonly',
       },
     },
     settings: {

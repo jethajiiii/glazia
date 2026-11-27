@@ -1,0 +1,112 @@
+/* ==========================================================================
+   Canvas Persistence UI  –  CanvasList + CanvasManagerModal
+   ========================================================================== */
+
+/* Loading states inside the manager */
+.canvas-list-loading,
+.canvas-manager-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--color-text-subtle);
+  font-size: 0.875rem;
+}
+
+/* List container */
+.canvas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Individual row */
+.canvas-list-item {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid transparent;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.canvas-list-item:hover {
+  background-color: var(--color-bg-hover);
+  border-color: var(--color-border-subtle);
+}
+
+.canvas-list-item--active {
+  background-color: var(--color-primary-subtle);
+  border-color: var(--color-primary);
+}
+
+/* Name / open button (takes all available width) */
+.canvas-list-item__name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  min-width: 0;
+}
+
+.canvas-list-item__name:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.canvas-list-item__title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.canvas-list-item--active .canvas-list-item__title {
+  color: var(--color-primary-text);
+}
+
+.canvas-list-item__meta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Delete button */
+.canvas-list-item__delete {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  background: none;
+  border: none;
+  border-left: 1px solid transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.canvas-list-item__delete:hover:not(:disabled) {
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-subtle);
+  border-left-color: var(--color-danger-subtle);
+}
+
+.canvas-list-item__delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
