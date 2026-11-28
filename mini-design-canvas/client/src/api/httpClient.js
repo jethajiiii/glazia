@@ -15,7 +15,10 @@ export class ApiClientError extends Error {
   }
 }
 
-const rawBase = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+const defaultBaseUrl = import.meta.env.PROD
+  ? 'https://glazia.onrender.com/api'
+  : 'http://localhost:5000/api';
+const rawBase = (import.meta.env.VITE_API_URL || defaultBaseUrl).trim().replace(/\/+$/, '');
 const API_BASE_URL = rawBase.endsWith('/api') ? rawBase : `${rawBase}/api`;
 
 /**
