@@ -543,8 +543,9 @@ CLIENT_ORIGIN=https://glazia.vercel.app
 
 ## 🔗 Live Demo
 
-> **Frontend**: _deployment pending_  
-> **Backend API**: _deployment pending_
+- **Frontend (Vercel)**: [https://glazia-kappa.vercel.app/](https://glazia-kappa.vercel.app/)  
+- **Backend API (Render)**: [https://glazia.onrender.com/](https://glazia.onrender.com/)  
+- **API Health Check**: [https://glazia.onrender.com/health](https://glazia.onrender.com/health)
 
 ---
 
