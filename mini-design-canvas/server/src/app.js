@@ -45,6 +45,15 @@ if (!config.isTest) {
   app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 }
 
+// Health check at root and /health for platform uptime monitors (e.g. Render)
+app.get(['/', '/health'], (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
 // Mount API routes
 app.use('/api', apiRouter);
 
