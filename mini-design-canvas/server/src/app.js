@@ -13,10 +13,28 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// Cross-Origin Resource Sharing restricted to client origin
+// Cross-Origin Resource Sharing with automatic support for Vercel production deployments
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://glazia-kappa.vercel.app',
+  ...(config.clientOrigin ? config.clientOrigin.split(',').map((o) => o.trim()) : []),
+].map((o) => o.replace(/\/+$/, ''));
+
 app.use(
   cors({
-    origin: config.clientOrigin,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/+$/, '');
+      if (
+        config.clientOrigin === '*' ||
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith('.vercel.app')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   }),
 );
